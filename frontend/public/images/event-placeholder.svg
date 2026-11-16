@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="title">
+  <title id="title">EventX event image placeholder</title>
+  <defs>
+    <linearGradient id="background" x1="0" x2="1" y1="0" y2="1">
+      <stop stop-color="#241a18"/>
+      <stop offset="1" stop-color="#a90f17"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#f6c477" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#f6c477" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <path fill="url(#background)" d="M0 0h1200v800H0z"/>
+  <circle cx="880" cy="210" r="290" fill="url(#glow)"/>
+  <path fill="#f6f0e7" fill-opacity=".92" d="M132 610V190h53l142 226V190h62v420h-49L194 376v234zm318 0V190h80v420zm151 0 136-420h87l136 420h-83l-27-93H709l-28 93zm129-160h98l-48-164z"/>
+  <path fill="#f6f0e7" fill-opacity=".75" d="M0 690h1200v110H0z"/>
+</svg>

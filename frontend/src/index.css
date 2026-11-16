@@ -1,0 +1,83 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #171513;
+  background: #f8f4ec;
+  font-family: "DM Sans", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+::selection {
+  color: #fff;
+  background: #d71920;
+}
+
+.hero-section {
+  isolation: isolate;
+}
+
+.organizer-section {
+  isolation: isolate;
+}
+
+.organizer-phone-wrap {
+  justify-content: center;
+  transform: translateY(3.5rem);
+}
+
+.organizer-phone {
+  width: 255px;
+  padding: 14px;
+  border: 5px solid #141414;
+  border-radius: 2.4rem;
+  background: #fffaf2;
+  color: #171513;
+  box-shadow: 0 25px 70px rgb(0 0 0 / 38%);
+  transform: rotate(3deg);
+}
+
+.skeleton {
+  background: linear-gradient(100deg, #e7dfd4 20%, #f5eee4 40%, #e7dfd4 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
