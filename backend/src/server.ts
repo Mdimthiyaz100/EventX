@@ -295,21 +295,15 @@ async function start(): Promise<void> {
     console.error(`Failed to connect to Aiven MySQL pool: ${msg}`);
   }
 
-    // Prisma connection diagnostic
-const prismaUrl = new URL(env.DATABASE_URL);
+const prismaPassword = decodeURIComponent(
+  new URL(env.DATABASE_URL).password
+);
 
-console.log("Prisma connection diagnostic:", {
-  hostname: prismaUrl.hostname,
-  port: prismaUrl.port,
-  database: prismaUrl.pathname,
-  username: decodeURIComponent(prismaUrl.username),
-  passwordPresent: Boolean(prismaUrl.password),
-  passwordLength: decodeURIComponent(prismaUrl.password).length,
+console.log("Render credential comparison:", {
+  databaseUrlPasswordLength: prismaPassword.length,
+  dbPasswordLength: env.DB_PASSWORD.length,
+  passwordsMatch: prismaPassword === env.DB_PASSWORD,
 });
-
-
-  await prisma.$connect();
-
 await prisma.$connect();
   const server = app.listen(env.PORT, () => {
     console.info(`EventX API listening on port ${env.PORT}`);
