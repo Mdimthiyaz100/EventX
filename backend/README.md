@@ -26,3 +26,21 @@ To provision the first admin, set `BOOTSTRAP_ADMIN_EMAIL` and
 `BOOTSTRAP_ADMIN_PASSWORD` (at least 12 characters) only in a trusted
 environment and run `npm run db:seed` once. The seed refuses to change an
 existing account and credentials should be removed after bootstrap.
+
+## Admin movie catalog
+
+The admin movie catalog uses the additive `Movie` migration and server-side
+Cloudinary uploads. Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and
+`CLOUDINARY_API_SECRET` in the private `.env` to enable image uploads. The
+application validates image content and size before sending images to
+`eventx/movies/posters` or `eventx/movies/banners`; only secure URLs are stored
+in MySQL. These settings can remain empty when Cloudinary uploads are not in use.
+
+After reviewing the new additive migration, deploy it with `npm run db:deploy`.
+This applies pending migration SQL and does not reset the database. Do not use
+`prisma migrate reset` against the Aiven database.
+
+Admin movie endpoints are mounted at `/api/admin/movies` and require an access
+token for an account with the `ADMIN` role. Published-only catalog endpoints
+are available at `/api/movies` and `/api/movies/:slug`. The admin interface is
+served by the frontend at `/admin`; published titles are listed at `/movies`.

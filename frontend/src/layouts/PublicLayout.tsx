@@ -1,107 +1,98 @@
-import { ArrowRight, Menu, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import React from "react";
+import UserNavbar from "../components/customer/UserNavbar";
 import { Link } from "react-router-dom";
-import Button from "../components/common/Button";
-
-const navigation = [
-  { label: "Discover", href: "/#home" },
-  { label: "Events", href: "/#featured-events" },
-  { label: "Categories", href: "/#categories" },
-  { label: "For organizers", href: "/#for-organizers" },
-];
+import { Ticket } from "lucide-react";
 
 export default function PublicLayout({
   children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
-    <>
-      <a
-        className="sr-only z-[60] rounded bg-white p-3 text-ink focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
-        href="#main-content"
-      >
-        Skip to content
-      </a>
-      <header className="sticky top-0 z-40 border-b border-ink/5 bg-cream/95 backdrop-blur-xl">
-        <div className="mx-auto flex h-[68px] max-w-[1440px] items-center justify-between px-5 sm:px-8 lg:px-12">
-          <Link
-            aria-label="EventX home"
-            className="font-display text-[2rem] font-extrabold leading-none tracking-tight text-ink"
-            to="/"
-          >
-            Event<span className="text-eventx">X</span>
-          </Link>
-          <nav aria-label="Main navigation" className="hidden items-center gap-8 md:flex">
-            {navigation.map((item) => (
-              <a
-                className="text-xs font-bold text-ink/80 transition hover:text-eventx focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eventx"
-                href={item.href}
-                key={item.label}
+    <div className="flex min-h-screen flex-col bg-[#0A0713] text-white selection:bg-[#E31824] selection:text-white">
+      {/* Dynamic User Navigation Bar */}
+      <UserNavbar />
+
+      {/* Main Content Viewport */}
+      <main className="flex-1" id="main-content">
+        {children}
+      </main>
+
+      {/* Premium Cinematic Footer */}
+      <footer className="mt-20 border-t border-white/10 bg-[#0B0914] text-white">
+        <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12 py-16">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-4 lg:grid-cols-5">
+            {/* Brand column */}
+            <div className="md:col-span-2">
+              <Link
+                to="/"
+                className="font-display text-3xl font-black uppercase tracking-tight text-white"
               >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-          <div className="hidden items-center gap-4 md:flex">
-            <a
-              className="px-2 py-2 text-xs font-bold text-ink transition hover:text-eventx focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eventx"
-              href="/#account"
-            >
-              Sign in
-            </a>
-            <Button
-              className="min-h-10 rounded-lg px-4 py-2 text-xs"
-              onClick={() =>
-                document.getElementById("featured-events")?.scrollIntoView({
-                  behavior: "smooth",
-                })
-              }
-            >
-              Get tickets
-              <ArrowRight aria-hidden="true" size={14} />
-            </Button>
-          </div>
-          <button
-            aria-expanded={menuOpen}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            className="grid size-10 place-items-center rounded-lg border border-ink/10 md:hidden"
-            onClick={() => setMenuOpen((open) => !open)}
-            type="button"
-          >
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-        {menuOpen && (
-          <nav
-            aria-label="Mobile navigation"
-            className="border-t border-ink/10 bg-cream px-5 py-4 md:hidden"
-          >
-            <div className="mx-auto flex max-w-[1440px] flex-col gap-1">
-              {navigation.map((item) => (
-                <a
-                  className="rounded-lg px-3 py-3 text-sm font-bold text-ink hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eventx"
-                  href={item.href}
-                  key={item.label}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {item.label}
-                </a>
-              ))}
-              <a
-                className="rounded-lg px-3 py-3 text-sm font-bold text-ink hover:bg-black/5"
-                href="/#account"
-                onClick={() => setMenuOpen(false)}
-              >
-                Sign in
-              </a>
+                Event<span className="text-[#E31824]">X</span>
+              </Link>
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-slate-400">
+                India's premier live entertainment, concerts, comedy shows, and movie discovery and ticket booking platform.
+              </p>
+              <div className="mt-6 flex items-center gap-3">
+                <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-semibold text-slate-300">
+                  <Ticket size={16} className="text-[#E31824]" />
+                  <span>100% Genuine Tickets & Instant Entry</span>
+                </div>
+              </div>
             </div>
-          </nav>
-        )}
-      </header>
-      {children}
-    </>
+
+            {/* Quick Links */}
+            <div>
+              <h4 className="font-display text-sm font-bold uppercase tracking-wider text-slate-200">
+                Explore
+              </h4>
+              <ul className="mt-4 space-y-2.5 text-xs font-medium text-slate-400">
+                <li><Link to="/events" className="hover:text-white transition">All Events</Link></li>
+                <li><Link to="/movies" className="hover:text-white transition">Latest Movies</Link></li>
+                <li><Link to="/category/Comedy Shows" className="hover:text-white transition">Comedy Shows</Link></li>
+                <li><Link to="/category/Concerts" className="hover:text-white transition">Live Concerts</Link></li>
+                <li><Link to="/category/Theatre" className="hover:text-white transition">Plays & Theatre</Link></li>
+                <li><Link to="/category/Sports" className="hover:text-white transition">Sports Matches</Link></li>
+              </ul>
+            </div>
+
+            {/* Portals */}
+            <div>
+              <h4 className="font-display text-sm font-bold uppercase tracking-wider text-slate-200">
+                Portals & Auth
+              </h4>
+              <ul className="mt-4 space-y-2.5 text-xs font-medium text-slate-400">
+                <li><Link to="/login" className="hover:text-white transition">User Login</Link></li>
+                <li><Link to="/choose-portal" className="hover:text-white transition">Portal Selector</Link></li>
+                <li><Link to="/my-bookings" className="hover:text-white transition">My Bookings</Link></li>
+                <li><Link to="/wishlist" className="hover:text-white transition">My Wishlist</Link></li>
+                <li><Link to="/admin/login" className="hover:text-[#E31824] transition">Admin Portal Login</Link></li>
+              </ul>
+            </div>
+
+            {/* Help & Contact */}
+            <div>
+              <h4 className="font-display text-sm font-bold uppercase tracking-wider text-slate-200">
+                EventX Support
+              </h4>
+              <ul className="mt-4 space-y-2.5 text-xs font-medium text-slate-400">
+                <li><span>support@eventx.com</span></li>
+                <li><span>Toll Free: 1800-EVENT-X</span></li>
+                <li><span>Terms of Service</span></li>
+                <li><span>Privacy Policy</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-14 border-t border-white/5 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
+            <span>© 2026 EventX Entertainment Network. All rights reserved.</span>
+            <div className="flex items-center gap-6">
+              <Link to="/choose-portal" className="hover:text-white transition">Switch Portal</Link>
+              <Link to="/admin/login" className="hover:text-white transition">Admin Access</Link>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

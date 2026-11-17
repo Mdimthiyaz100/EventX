@@ -1,8 +1,8 @@
-node_modules/
-dist/
-coverage/
 .env
 .env.*
 !.env.example
-uploads/
-*.tsbuildinfo
+
+backend/.env
+frontend/.env
+node_modules/
+dist/

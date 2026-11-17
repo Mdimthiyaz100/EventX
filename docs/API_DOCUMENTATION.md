@@ -102,3 +102,17 @@ callback.
 | PATCH | `/api/admin/events/:id/review` | Admin | Publish or reject (`{ "publish": true }`) |
 | GET | `/api/admin/organizers` | Admin | List organizer accounts |
 | PATCH | `/api/admin/organizers/:id/approval` | Admin | Approve/revoke (`{ "approved": true }`) |
+| GET | `/api/admin/movies` | Admin | Search/filter/paginate movies (`page`, `limit`, `search`, `language`, `genre`, `status`, `sort`) |
+| GET | `/api/admin/movies/:id` | Admin | Read a movie, including draft or archived titles |
+| POST | `/api/admin/movies` | Admin | Create a movie from validated JSON metadata and uploaded image URLs |
+| PUT | `/api/admin/movies/:id` | Admin | Update movie metadata or image URLs |
+| PATCH | `/api/admin/movies/:id/status` | Admin | Publish, unpublish to draft, or archive (`{ "status": "PUBLISHED" }`) |
+| DELETE | `/api/admin/movies/:id` | Admin | Delete a movie; unreferenced Cloudinary images are cleaned up |
+| POST | `/api/admin/movies/images?kind=poster\|banner` | Admin | Upload JPEG, PNG, or WebP in multipart field `image` (max 5 MB by default) |
+| GET | `/api/movies` | Public | Paginate/search published movies only |
+| GET | `/api/movies/:slug` | Public | Published movie details |
+
+Movie images are uploaded server-side to Cloudinary. Configure all three
+`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`
+variables in `backend/.env`; image URLs are stored in MySQL, never image bytes.
+The additive movie migration is deployed with `npm run db:deploy` after review.

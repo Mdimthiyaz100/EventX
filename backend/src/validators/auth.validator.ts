@@ -4,8 +4,8 @@ export const registerSchema = z
   .object({
     name: z.string().trim().min(2).max(120),
     email: z.string().trim().email().max(191),
-    password: z.string().min(12).max(128),
-    phone: z.string().regex(/^\+[1-9]\d{7,14}$/).optional(),
+    password: z.string().min(8).max(128),
+    phone: z.union([z.string().regex(/^\+?[0-9\s-]{7,16}$/), z.literal("")]).optional(),
     accountType: z.enum(["CUSTOMER", "ORGANIZER"]).default("CUSTOMER"),
   })
   .strict();

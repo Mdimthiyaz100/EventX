@@ -7,6 +7,7 @@ import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import { env } from "./config/env.js";
 import { prisma } from "./config/database.js";
+import { pool, testDatabaseConnection } from "./config/mysql.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { asyncHandler, AppError, sendData } from "./utils/http.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -17,6 +18,7 @@ import organizerRoutes from "./routes/organizer.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import * as paymentController from "./controllers/payment.controller.js";
 import { expireStaleBookings } from "./jobs/booking-expiration.job.js";
+import { adminMovieRouter, publicMovieRouter } from "./routes/movie.routes.js";
 
 const app = express();
 const openApiDocument = {
@@ -55,6 +57,54 @@ const openApiDocument = {
     },
   },
   paths: {
+    "/movies": {
+      get: {
+        summary: "Search and paginate published movies",
+        parameters: [
+          { in: "query", name: "page", schema: { type: "integer", minimum: 1 } },
+          { in: "query", name: "limit", schema: { type: "integer", maximum: 50 } },
+          { in: "query", name: "search", schema: { type: "string" } },
+          { in: "query", name: "language", schema: { type: "string" } },
+          { in: "query", name: "genre", schema: { type: "string" } },
+        ],
+        responses: { "200": { description: "Published movies and pagination" } },
+      },
+    },
+    "/movies/{slug}": {
+      get: { summary: "Read published movie details", responses: { "200": { description: "Published movie" }, "404": { description: "Movie not found" } } },
+    },
+    "/admin/movies": {
+      get: {
+        summary: "Search and paginate movies for administrators",
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { in: "query", name: "page", schema: { type: "integer", minimum: 1 } },
+          { in: "query", name: "limit", schema: { type: "integer", maximum: 50 } },
+          { in: "query", name: "search", schema: { type: "string" } },
+          { in: "query", name: "language", schema: { type: "string" } },
+          { in: "query", name: "genre", schema: { type: "string" } },
+          { in: "query", name: "status", schema: { type: "string", enum: ["DRAFT", "PUBLISHED", "ARCHIVED"] } },
+        ],
+        responses: { "200": { description: "Movies and pagination" }, "401": { description: "Authentication required" }, "403": { description: "Administrator role required" } },
+      },
+      post: {
+        summary: "Create a movie",
+        security: [{ bearerAuth: [] }],
+        requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["title", "description", "language", "genre", "duration", "certification", "releaseDate", "posterUrl", "director", "cast"], additionalProperties: false, properties: { title: { type: "string" }, description: { type: "string" }, language: { type: "string" }, genre: { type: "string" }, duration: { type: "integer" }, certification: { type: "string", enum: ["U", "UA", "A"] }, releaseDate: { type: "string", format: "date" }, posterUrl: { type: "string", format: "uri" }, bannerUrl: { type: "string", format: "uri", nullable: true }, trailerUrl: { type: "string", format: "uri", nullable: true }, director: { type: "string" }, cast: { type: "string" }, status: { type: "string", enum: ["DRAFT", "PUBLISHED", "ARCHIVED"] }, featured: { type: "boolean" } } } } } },
+        responses: { "201": { description: "Movie created" }, "400": { description: "Validation failed" } },
+      },
+    },
+    "/admin/movies/{id}": {
+      get: { summary: "Read a movie for administrators", security: [{ bearerAuth: [] }], responses: { "200": { description: "Movie details" }, "404": { description: "Movie not found" } } },
+      put: { summary: "Update movie metadata", security: [{ bearerAuth: [] }], responses: { "200": { description: "Movie updated" } } },
+      delete: { summary: "Delete a movie and clean up unreferenced images", security: [{ bearerAuth: [] }], responses: { "200": { description: "Movie deleted" } } },
+    },
+    "/admin/movies/{id}/status": {
+      patch: { summary: "Change movie publication status", security: [{ bearerAuth: [] }], requestBody: { required: true, content: { "application/json": { schema: { type: "object", required: ["status"], properties: { status: { type: "string", enum: ["DRAFT", "PUBLISHED", "ARCHIVED"] } } } } } }, responses: { "200": { description: "Movie status updated" } } },
+    },
+    "/admin/movies/images": {
+      post: { summary: "Upload a movie poster or banner to Cloudinary", security: [{ bearerAuth: [] }], parameters: [{ in: "query", name: "kind", required: true, schema: { type: "string", enum: ["poster", "banner"] } }], requestBody: { required: true, content: { "multipart/form-data": { schema: { type: "object", required: ["image"], properties: { image: { type: "string", format: "binary" } } } } } }, responses: { "201": { description: "Uploaded secure URL" }, "413": { description: "Image exceeds size limit" } } },
+    },
     "/health": {
       get: {
         summary: "Health check",
@@ -179,6 +229,27 @@ app.get(
     sendData(response, { status: "ok" });
   }),
 );
+
+app.get(
+  "/api/health/db",
+  async (_request, response) => {
+    try {
+      const { database } = await testDatabaseConnection();
+      return response.status(200).json({
+        success: true,
+        message: "Database connected successfully",
+        database,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Database connection failed";
+      console.error("Health check database failure:", message);
+      return response.status(500).json({
+        success: false,
+        message: "Database connection failed",
+      });
+    }
+  },
+);
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 app.use("/uploads", express.static(resolve(process.cwd(), env.UPLOAD_DIR), {
   dotfiles: "deny",
@@ -186,7 +257,22 @@ app.use("/uploads", express.static(resolve(process.cwd(), env.UPLOAD_DIR), {
   maxAge: "1d",
   immutable: false,
 }));
+app.get(
+  "/api/categories",
+  asyncHandler(async (_request, response) => {
+    const rawCategories = await prisma.event.findMany({
+      where: { status: "PUBLISHED" },
+      select: { category: true },
+      distinct: ["category"],
+    });
+    const categories = rawCategories.map((c) => c.category).filter(Boolean);
+    sendData(response, categories);
+  }),
+);
+
 app.use("/api/auth", authRoutes);
+app.use("/api/movies", publicMovieRouter);
+app.use("/api/admin/movies", adminMovieRouter);
 app.use("/api/events", eventRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/payments", paymentRoutes);
@@ -199,6 +285,16 @@ app.use(errorMiddleware);
 
 async function start(): Promise<void> {
   await mkdir(resolve(process.cwd(), env.UPLOAD_DIR), { recursive: true });
+  
+  // Verify MySQL connection pool
+  try {
+    const { database } = await testDatabaseConnection();
+    console.info(`Connected to Aiven MySQL database: ${database}`);
+  } catch (dbError: unknown) {
+    const msg = dbError instanceof Error ? dbError.message : String(dbError);
+    console.error(`Failed to connect to Aiven MySQL pool: ${msg}`);
+  }
+
   await prisma.$connect();
   const server = app.listen(env.PORT, () => {
     console.info(`EventX API listening on port ${env.PORT}`);
@@ -214,7 +310,10 @@ async function start(): Promise<void> {
     console.info(`${signal} received; shutting down.`);
     clearInterval(expirationTimer);
     server.close(() => {
-      void prisma.$disconnect().then(() => process.exit(0));
+      void Promise.all([
+        prisma.$disconnect(),
+        pool.end(),
+      ]).then(() => process.exit(0));
     });
   };
   process.once("SIGINT", () => shutdown("SIGINT"));

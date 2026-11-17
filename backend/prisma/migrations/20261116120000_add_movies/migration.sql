@@ -1,0 +1,26 @@
+CREATE TABLE `Movie` (
+    `id` VARCHAR(191) NOT NULL,
+    `title` VARCHAR(180) NOT NULL,
+    `slug` VARCHAR(200) NOT NULL,
+    `description` TEXT NOT NULL,
+    `language` VARCHAR(80) NOT NULL,
+    `genre` VARCHAR(100) NOT NULL,
+    `duration` INTEGER NOT NULL,
+    `certification` VARCHAR(8) NOT NULL,
+    `releaseDate` DATE NOT NULL,
+    `posterUrl` VARCHAR(1000) NOT NULL,
+    `bannerUrl` VARCHAR(1000) NULL,
+    `trailerUrl` VARCHAR(500) NULL,
+    `director` VARCHAR(180) NOT NULL,
+    `cast` TEXT NOT NULL,
+    `status` ENUM('DRAFT', 'PUBLISHED', 'ARCHIVED') NOT NULL DEFAULT 'DRAFT',
+    `featured` BOOLEAN NOT NULL DEFAULT false,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `Movie_slug_key`(`slug`),
+    INDEX `Movie_status_releaseDate_idx`(`status`, `releaseDate`),
+    INDEX `Movie_language_genre_idx`(`language`, `genre`),
+    INDEX `Movie_featured_releaseDate_idx`(`featured`, `releaseDate`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

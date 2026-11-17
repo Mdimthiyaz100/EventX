@@ -1,100 +1,137 @@
-import { CalendarDays, Heart, MapPin, Ticket } from "lucide-react";
-import { useState } from "react";
-import type { EventSummary } from "../../types/event";
-import Button from "../common/Button";
+import { Link } from "react-router-dom";
+import { Calendar, MapPin, Heart } from "lucide-react";
+import type { EventItem } from "../../types/content";
+import { useWishlist } from "../../context/WishlistContext";
 
 interface EventCardProps {
-  event: EventSummary;
-  onBook: (event: EventSummary) => void;
+  event: EventItem;
 }
 
-const categoryColors: Record<string, string> = {
-  Music: "bg-rose-100 text-rose-800",
-  Tech: "bg-sky-100 text-sky-800",
-  Food: "bg-orange-100 text-orange-800",
-  Sports: "bg-emerald-100 text-emerald-800",
-  Festival: "bg-violet-100 text-violet-800",
-};
+export default function EventCard({ event }: EventCardProps) {
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const wishlisted = isWishlisted(event.id);
 
-const dateFormatter = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
+  const formattedDate = event.startDate || event.startAt
+    ? new Intl.DateTimeFormat("en-IN", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        hour12: true,
+      }).format(new Date(event.startDate || event.startAt))
+    : "Date TBA";
 
-const priceFormatter = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
+  const lowestPrice =
+    typeof event.price === "number"
+      ? event.price
+      : event.ticketTypes && event.ticketTypes.length > 0
+      ? Math.min(...event.ticketTypes.map((t) => Number(t.price)))
+      : 0;
 
-export default function EventCard({ event, onBook }: EventCardProps) {
-  const [saved, setSaved] = useState(false);
-  const [imageUrl, setImageUrl] = useState(
-    event.imageUrl || "/images/event-placeholder.svg",
-  );
-  const date = new Date(event.startDate);
-  const formattedDate = Number.isNaN(date.getTime())
-    ? "Date to be announced"
-    : dateFormatter.format(date);
+  // Category badge color accents
+  const getBadgeStyle = (category: string) => {
+    const c = category.toLowerCase();
+    if (c.includes("comedy")) return "bg-purple-600/80 text-purple-100 border-purple-500/40";
+    if (c.includes("concert") || c.includes("music")) return "bg-pink-600/80 text-pink-100 border-pink-500/40";
+    if (c.includes("theatre") || c.includes("drama")) return "bg-amber-600/80 text-amber-100 border-amber-500/40";
+    if (c.includes("sports")) return "bg-emerald-600/80 text-emerald-100 border-emerald-500/40";
+    return "bg-blue-600/80 text-blue-100 border-blue-500/40";
+  };
 
   return (
-    <article className="event-card group overflow-hidden rounded-2xl border border-ink/5 bg-paper shadow-[0_6px_20px_rgba(27,20,15,.07)] transition duration-300 hover:-translate-y-1 hover:shadow-soft">
-      <div className="relative h-52 overflow-hidden bg-ink/10">
+    <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#161224]/80 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:shadow-2xl hover:shadow-red-950/20 hover:-translate-y-1">
+      {/* Top Media Section */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900">
         <img
+          src={
+            event.imageUrl ||
+            "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80"
+          }
           alt={event.title}
-          className="size-full object-cover transition duration-700 group-hover:scale-105"
+          className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
-          onError={() => setImageUrl("/images/event-placeholder.svg")}
-          src={imageUrl}
         />
-        <span
-          className={`absolute left-3 top-3 rounded-full px-3 py-1 text-[11px] font-bold ${categoryColors[event.category] ?? "bg-white text-ink"}`}
-        >
-          {event.category}
-        </span>
+
+        {/* Gradient shadow overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#161224] via-transparent to-black/40" />
+
+        {/* Category Pill Tag */}
+        <div className="absolute top-3 left-3">
+          <span
+            className={`inline-block rounded-md border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider backdrop-blur-md ${getBadgeStyle(
+              event.category
+            )}`}
+          >
+            {event.category}
+          </span>
+        </div>
+
+        {/* Wishlist Heart Button */}
         <button
-          aria-label={saved ? `Remove ${event.title} from saved events` : `Save ${event.title}`}
-          aria-pressed={saved}
-          className={`absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-white/90 shadow-sm backdrop-blur transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-eventx ${
-            saved ? "text-eventx" : "text-ink"
-          }`}
-          onClick={() => setSaved((current) => !current)}
-          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(event.id);
+          }}
+          className="absolute top-3 right-3 grid size-8 place-items-center rounded-full border border-white/20 bg-black/40 text-white backdrop-blur-md transition hover:scale-110 hover:bg-black/60"
+          title={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
         >
-          <Heart aria-hidden="true" fill={saved ? "currentColor" : "none"} size={17} />
+          <Heart
+            size={15}
+            className={wishlisted ? "fill-[#E31824] text-[#E31824]" : "text-white"}
+          />
         </button>
       </div>
-      <div className="p-4">
-        <h3 className="min-h-12 font-display text-[1.4rem] font-bold uppercase leading-[1.05] tracking-tight text-ink">
-          {event.title}
-        </h3>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink/70">
-          <span className="inline-flex items-center gap-1.5">
-            <MapPin aria-hidden="true" size={14} />
-            {event.location}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <CalendarDays aria-hidden="true" size={14} />
-            <time dateTime={event.startDate}>{formattedDate}</time>
-          </span>
+
+      {/* Card Info Content */}
+      <div className="flex flex-1 flex-col justify-between p-4 sm:p-5">
+        <div>
+          <Link to={`/events/${event.id}`}>
+            <h3 className="font-display text-lg font-bold uppercase tracking-wide text-white transition hover:text-[#E31824] line-clamp-1">
+              {event.title}
+            </h3>
+          </Link>
+
+          {/* Date & Time */}
+          <div className="mt-2.5 flex items-center gap-1.5 text-xs text-slate-400">
+            <Calendar size={13} className="shrink-0 text-slate-400" />
+            <span className="truncate">{formattedDate}</span>
+          </div>
+
+          {/* Venue & Location */}
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-400">
+            <MapPin size={13} className="shrink-0 text-slate-400" />
+            <span className="truncate">{event.venue || event.location || event.city}</span>
+          </div>
         </div>
-        <div className="mt-4 flex items-center justify-between border-t border-ink/10 pt-3">
-          <span className="text-xs text-ink/60">
-            From{" "}
-            <strong className="text-sm font-extrabold text-ink">
-              {priceFormatter.format(event.price)}
-            </strong>
-          </span>
-          <Button
-            className="min-h-10 rounded-lg px-3.5 py-2 text-xs"
-            onClick={() => onBook(event)}
+
+        {/* Bottom Pricing & CTA */}
+        <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-3.5">
+          <div>
+            <span className="block text-[10px] font-medium uppercase tracking-wider text-slate-400">
+              {lowestPrice === 0 ? "Entry" : "From"}
+            </span>
+            <span className="font-display text-base font-extrabold text-white">
+              {lowestPrice === 0
+                ? "FREE"
+                : new Intl.NumberFormat("en-IN", {
+                    style: "currency",
+                    currency: "INR",
+                    maximumFractionDigits: 0,
+                  }).format(lowestPrice)}
+            </span>
+          </div>
+
+          <Link
+            to={`/events/${event.id}`}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#E31824] px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-md shadow-red-600/25 transition hover:bg-[#c8141f] active:scale-95"
           >
-            <Ticket aria-hidden="true" size={14} />
-            Book now
-          </Button>
+            <span>Book Now</span>
+            <span className="text-xs">&rarr;</span>
+          </Link>
         </div>
       </div>
-    </article>
+    </div>
   );
 }

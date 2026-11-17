@@ -33,6 +33,37 @@ enum PaymentStatus {
   REFUNDED
 }
 
+enum MovieStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Movie {
+  id            String      @id @default(cuid()) @db.VarChar(191)
+  title         String      @db.VarChar(180)
+  slug          String      @unique @db.VarChar(200)
+  description   String      @db.Text
+  language      String      @db.VarChar(80)
+  genre         String      @db.VarChar(100)
+  duration      Int
+  certification String      @db.VarChar(8)
+  releaseDate   DateTime    @db.Date
+  posterUrl     String      @db.VarChar(1000)
+  bannerUrl     String?     @db.VarChar(1000)
+  trailerUrl    String?     @db.VarChar(500)
+  director      String      @db.VarChar(180)
+  cast          String      @db.Text
+  status        MovieStatus @default(DRAFT)
+  featured      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status, releaseDate])
+  @@index([language, genre])
+  @@index([featured, releaseDate])
+}
+
 model User {
   id                 String         @id @default(cuid())
   name               String         @db.VarChar(120)
