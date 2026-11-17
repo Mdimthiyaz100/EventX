@@ -296,6 +296,19 @@ async function start(): Promise<void> {
   }
 
   await prisma.$connect();
+  // Prisma connection diagnostic
+const prismaUrl = new URL(env.DATABASE_URL);
+
+console.log("Prisma connection diagnostic:", {
+  hostname: prismaUrl.hostname,
+  port: prismaUrl.port,
+  database: prismaUrl.pathname,
+  username: decodeURIComponent(prismaUrl.username),
+  passwordPresent: Boolean(prismaUrl.password),
+  passwordLength: decodeURIComponent(prismaUrl.password).length,
+});
+
+await prisma.$connect();
   const server = app.listen(env.PORT, () => {
     console.info(`EventX API listening on port ${env.PORT}`);
   });
