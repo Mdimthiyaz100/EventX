@@ -1,4 +1,5 @@
 import type { UserRole } from "@prisma/client";
+import "multer";
 
 declare global {
   namespace Express {

@@ -12,7 +12,14 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "types": ["node"]
+    "types": [
+      "node",
+      "express",
+      "multer",
+      "bcryptjs",
+      "jsonwebtoken",
+      "swagger-ui-express"
+    ]
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "prisma/seed.ts"]
 }

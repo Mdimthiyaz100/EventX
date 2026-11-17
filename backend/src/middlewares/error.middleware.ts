@@ -46,10 +46,13 @@ export const errorMiddleware: ErrorRequestHandler = (
     return;
   }
 
+  // Type narrowing for syntax / body errors
   if (
     error instanceof SyntaxError &&
+    error !== null &&
+    typeof error === "object" &&
     "status" in error &&
-    error.status === 400
+    (error as Record<string, unknown>).status === 400
   ) {
     response.status(400).json({
       success: false,
@@ -58,22 +61,23 @@ export const errorMiddleware: ErrorRequestHandler = (
     return;
   }
 
+  // Type narrowing for arbitrary HTTP error objects
   if (
     typeof error === "object" &&
     error !== null &&
-    "status" in error &&
-    typeof error.status === "number" &&
-    error.status >= 400 &&
-    error.status < 500
+    "status" in error
   ) {
-    response.status(error.status).json({
-      success: false,
-      error: {
-        code: error.status === 413 ? "REQUEST_TOO_LARGE" : "INVALID_REQUEST",
-        message: error.status === 413 ? "Request body exceeds the allowed size." : "Request could not be processed.",
-      },
-    });
-    return;
+    const statusVal = (error as Record<string, unknown>).status;
+    if (typeof statusVal === "number" && statusVal >= 400 && statusVal < 500) {
+      response.status(statusVal).json({
+        success: false,
+        error: {
+          code: statusVal === 413 ? "REQUEST_TOO_LARGE" : "INVALID_REQUEST",
+          message: statusVal === 413 ? "Request body exceeds the allowed size." : "Request could not be processed.",
+        },
+      });
+      return;
+    }
   }
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
