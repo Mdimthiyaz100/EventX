@@ -29,7 +29,7 @@ export default function ExploreEvents() {
       try {
         setLoading(true);
         const [eventsRes, catsRes] = await Promise.allSettled([
-          apiGet("/events?limit=100"),
+          apiGet("/events?limit=50"),
           apiGet("/categories"),
         ]);
         if (mounted) {

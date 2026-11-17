@@ -20,7 +20,7 @@ export default function WishlistPage() {
       try {
         setLoading(true);
         const [eventsRes, moviesRes] = await Promise.allSettled([
-          apiGet("/events?limit=100"),
+          apiGet("/events?limit=50"),
           apiGet("/movies?limit=50"),
         ]);
 
