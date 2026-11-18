@@ -17,7 +17,6 @@ import { apiGet } from "../../services/api";
 import type { EventItem, MovieItem } from "../../types/content";
 import EventCard from "../../components/customer/EventCard";
 import MovieCard from "../../components/customer/MovieCard";
-import { CITY_OPTIONS } from "../../components/customer/UserNavbar";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -26,11 +25,12 @@ export default function Home() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Search & Filters state
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCity, setSelectedCity] = useState("Chennai");
+  const [selectedCity, setSelectedCity] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [activeCategoryTab, setActiveCategoryTab] = useState("All");
 
@@ -41,10 +41,11 @@ export default function Home() {
     async function loadData() {
       try {
         setLoading(true);
-        const [eventsRes, moviesRes, categoriesRes] = await Promise.allSettled([
+        const [eventsRes, moviesRes, categoriesRes, citiesRes] = await Promise.allSettled([
           apiGet("/events?limit=50"),
           apiGet("/movies?limit=20"),
           apiGet("/categories"),
+          apiGet("/cities"),
         ]);
 
         if (mounted) {
@@ -61,6 +62,13 @@ export default function Home() {
           }
           if (categoriesRes.status === "fulfilled" && Array.isArray(categoriesRes.value)) {
             setCategories(categoriesRes.value as string[]);
+          }
+          if (citiesRes.status === "fulfilled" && Array.isArray(citiesRes.value)) {
+            const fetchedCities = citiesRes.value as string[];
+            setCities(fetchedCities);
+            if (fetchedCities.length > 0) {
+              setSelectedCity(fetchedCities[0]);
+            }
           }
         }
       } catch (err) {
@@ -202,11 +210,15 @@ export default function Home() {
                 onChange={(e) => setSelectedCity(e.target.value)}
                 className="bg-transparent text-xs font-semibold text-white focus:outline-none cursor-pointer"
               >
-                {CITY_OPTIONS.map((c) => (
-                  <option key={c} value={c} className="bg-[#171328] text-white">
-                    {c}
-                  </option>
-                ))}
+                {cities.length === 0 ? (
+                  <option value="" className="bg-[#171328] text-white">All Locations</option>
+                ) : (
+                  cities.map((c) => (
+                    <option key={c} value={c} className="bg-[#171328] text-white">
+                      {c}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
@@ -519,11 +531,15 @@ export default function Home() {
                       onChange={(e) => setSelectedCity(e.target.value)}
                       className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 px-3 text-xs font-semibold text-white focus:border-[#E31824] focus:outline-none"
                     >
-                      {CITY_OPTIONS.map((c) => (
-                        <option key={c} value={c} className="bg-[#161224] text-white">
-                          {c}
-                        </option>
-                      ))}
+                      {cities.length === 0 ? (
+                        <option value="" className="bg-[#161224] text-white">All Locations</option>
+                      ) : (
+                        cities.map((c) => (
+                          <option key={c} value={c} className="bg-[#161224] text-white">
+                            {c}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>
@@ -551,7 +567,7 @@ export default function Home() {
               </form>
             </div>
 
-            {/* Widget 2: Trending Now (From Reference) */}
+            {/* Widget 2: Trending Now (Calculated from Real Database Events & Movies) */}
             <div className="rounded-2xl border border-white/10 bg-[#161224] p-5 shadow-xl">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#E31824] mb-4">
                 <Flame size={16} />
@@ -559,24 +575,7 @@ export default function Home() {
               </div>
 
               <div className="space-y-3">
-                {/* Comedy Trending */}
-                <Link
-                  to="/category/Comedy Shows"
-                  className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3 transition hover:border-[#E31824]/50 hover:bg-white/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="grid size-10 place-items-center rounded-lg bg-purple-600/20 text-purple-400">
-                      🎭
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-white">Comedy Shows</p>
-                      <p className="text-[10px] text-slate-400">12+ Shows this week</p>
-                    </div>
-                  </div>
-                  <ChevronRight size={14} className="text-slate-500" />
-                </Link>
-
-                {/* Movies Trending */}
+                {/* Movies Trending Count */}
                 <Link
                   to="/movies"
                   className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3 transition hover:border-[#E31824]/50 hover:bg-white/10"
@@ -587,45 +586,46 @@ export default function Home() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-white">Movies</p>
-                      <p className="text-[10px] text-slate-400">8 New Releases</p>
+                      <p className="text-[10px] text-slate-400">
+                        {movies.length > 0 ? `${movies.length} Releases Active` : "Browse Movies"}
+                      </p>
                     </div>
                   </div>
                   <ChevronRight size={14} className="text-slate-500" />
                 </Link>
 
-                {/* Concerts Trending */}
-                <Link
-                  to="/category/Concerts"
-                  className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3 transition hover:border-[#E31824]/50 hover:bg-white/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="grid size-10 place-items-center rounded-lg bg-pink-600/20 text-pink-400">
-                      <Music size={18} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-white">Concerts</p>
-                      <p className="text-[10px] text-slate-400">5 Live Concerts</p>
-                    </div>
-                  </div>
-                  <ChevronRight size={14} className="text-slate-500" />
-                </Link>
+                {/* Categories with real dynamic counts from database */}
+                {categories.slice(0, 4).map((cat) => {
+                  const count = events.filter(
+                    (e) => e.category.toLowerCase() === cat.toLowerCase()
+                  ).length;
+                  return (
+                    <Link
+                      key={cat}
+                      to={`/category/${encodeURIComponent(cat)}`}
+                      className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3 transition hover:border-[#E31824]/50 hover:bg-white/10"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="grid size-10 place-items-center rounded-lg bg-white/5 text-[#E31824]">
+                          {getCategoryIcon(cat)}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white">{cat}</p>
+                          <p className="text-[10px] text-slate-400">
+                            {count > 0 ? `${count} Live ${count === 1 ? "Event" : "Events"}` : "Discover Shows"}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronRight size={14} className="text-slate-500" />
+                    </Link>
+                  );
+                })}
 
-                {/* Theatre */}
-                <Link
-                  to="/category/Theatre"
-                  className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3 transition hover:border-[#E31824]/50 hover:bg-white/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="grid size-10 place-items-center rounded-lg bg-amber-600/20 text-amber-400">
-                      <Sparkles size={18} />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-white">Theatre & Plays</p>
-                      <p className="text-[10px] text-slate-400">Classical & Drama</p>
-                    </div>
+                {categories.length === 0 && movies.length === 0 && (
+                  <div className="py-4 text-center text-xs text-slate-500">
+                    No active trending listings yet.
                   </div>
-                  <ChevronRight size={14} className="text-slate-500" />
-                </Link>
+                )}
               </div>
             </div>
 

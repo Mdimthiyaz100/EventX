@@ -8,16 +8,26 @@ export async function expireStaleBookings(): Promise<void> {
   running = true;
   try {
     const now = new Date();
-    const candidates = await prisma.booking.findMany({
-      where: {
-        status: BookingStatus.PENDING,
-        expiresAt: { lte: now },
-        payment: { is: { providerReferenceId: null } },
-      },
-      select: { id: true },
-      take: 100,
-      orderBy: { expiresAt: "asc" },
-    });
+    let candidates: { id: string }[] = [];
+    try {
+      candidates = await prisma.booking.findMany({
+        where: {
+          status: BookingStatus.PENDING,
+          expiresAt: { lte: now },
+          payment: { is: { providerReferenceId: null } },
+        },
+        select: { id: true },
+        take: 100,
+        orderBy: { expiresAt: "asc" },
+      });
+    } catch (queryErr: any) {
+      // If transient network glitch to cloud MySQL occurs, log cleanly and retry on next interval
+      if (queryErr?.code === "P1001" || queryErr?.message?.includes("Can't reach database server")) {
+        console.warn("Booking expiration job: database connection temporarily unreachable, will retry on next cycle.");
+        return;
+      }
+      throw queryErr;
+    }
 
     for (const candidate of candidates) {
       await prisma.$transaction(

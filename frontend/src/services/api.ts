@@ -99,9 +99,10 @@ export async function apiRequest<T>(
   path: string,
   data?: unknown,
   params?: Record<string, string | number | boolean | undefined>,
+  headers?: Record<string, string>,
 ): Promise<T> {
   try {
-    const response = await api.request<unknown>({ method, url: path, data, params });
+    const response = await api.request<unknown>({ method, url: path, data, params, headers });
     const body = response.data;
     if (typeof body === "object" && body !== null && "success" in body && body.success === true && "data" in body) {
       return body.data as T;

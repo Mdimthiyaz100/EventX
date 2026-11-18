@@ -113,6 +113,21 @@ export interface AdminCategory {
   movies: number;
 }
 
+export interface AdminTransaction {
+  id: string;
+  status: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  amount: number | string;
+  currency: string;
+  providerReferenceId: string | null;
+  providerPaymentId: string | null;
+  createdAt: string;
+  booking: {
+    id: string;
+    user: { id: string; name: string; email: string };
+    event: { id: string; title: string };
+  };
+}
+
 export interface PaginatedResult<T> {
   events?: T[];
   bookings?: T[];
@@ -184,3 +199,27 @@ export async function updateOrganizerApproval(id: string, approved: boolean): Pr
 export async function listAdminCategories(): Promise<AdminCategory[]> {
   return apiRequest<AdminCategory[]>("GET", "/admin/categories");
 }
+
+export async function listAdminTransactions(params?: {
+  page?: number;
+  limit?: number;
+  status?: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+}): Promise<{ payments: AdminTransaction[]; pagination: PaginatedResult<AdminTransaction>["pagination"] }> {
+  return apiRequest("GET", "/admin/transactions", undefined, params);
+}
+
+// Compatibility exports for callers using the earlier service naming scheme.
+export const fetchDashboard = getAdminDashboard;
+export const listEvents = listAdminEvents;
+export const getEvent = getAdminEvent;
+export const createEvent = createAdminEvent;
+export const updateEvent = updateAdminEvent;
+export const deleteEvent = deleteAdminEvent;
+export const setEventReview = reviewAdminEvent;
+export const listBookings = listAdminBookings;
+export const listUsers = listAdminUsers;
+export const listOrganizers = (params?: { page?: number; limit?: number; search?: string }) =>
+  listAdminUsers({ ...params, role: "ORGANIZER" });
+export const setOrganizerApproval = updateOrganizerApproval;
+export const listTransactions = listAdminTransactions;
+export const listCategories = listAdminCategories;

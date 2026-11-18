@@ -8,13 +8,13 @@ interface AnalyticsCardProps {
 }
 
 const defaultWeeklyData = [
-  { day: "Mon", value: 35 },
-  { day: "Tue", value: 85 },
-  { day: "Wed", value: 95 },
-  { day: "Thu", value: 125 },
-  { day: "Fri", value: 110 },
-  { day: "Sat", value: 135 },
-  { day: "Sun", value: 182 },
+  { day: "Mon", value: 0 },
+  { day: "Tue", value: 0 },
+  { day: "Wed", value: 0 },
+  { day: "Thu", value: 0 },
+  { day: "Fri", value: 0 },
+  { day: "Sat", value: 0 },
+  { day: "Sun", value: 0 },
 ];
 
 export default function AnalyticsCard({ stats }: AnalyticsCardProps) {
@@ -22,7 +22,7 @@ export default function AnalyticsCard({ stats }: AnalyticsCardProps) {
   const data = stats?.weeklyData && stats.weeklyData.length === 7 ? stats.weeklyData : defaultWeeklyData;
 
   const yTicks = [200, 150, 100, 50, 0];
-  const peakItem = data[data.length - 1]; // Sunday (182)
+  const peakItem = data[data.length - 1] || { day: "Sun", value: 0 };
 
   // Chart coordinates mapping (Width 500, Height 150)
   // X from 35 to 485, Y from 135 (value 0) to 15 (value 200)

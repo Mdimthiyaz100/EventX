@@ -270,6 +270,19 @@ app.get(
   }),
 );
 
+app.get(
+  "/api/cities",
+  asyncHandler(async (_request, response) => {
+    const rawCities = await prisma.event.findMany({
+      where: { status: "PUBLISHED" },
+      select: { city: true },
+      distinct: ["city"],
+    });
+    const cities = rawCities.map((c) => c.city).filter(Boolean);
+    sendData(response, cities);
+  }),
+);
+
 app.use("/api/auth", authRoutes);
 app.use("/api/movies", publicMovieRouter);
 app.use("/api/admin/movies", adminMovieRouter);

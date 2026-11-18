@@ -19,15 +19,19 @@ export default function MovieCard({ movie }: MovieCardProps) {
     <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#161224]/80 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:shadow-2xl hover:shadow-red-950/20 hover:-translate-y-1">
       {/* Movie Poster Image (Portrait 2:3) */}
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-slate-900">
-        <img
-          src={
-            movie.posterUrl ||
-            "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80"
-          }
-          alt={movie.title}
-          className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+        {movie.posterUrl ? (
+          <img
+            src={movie.posterUrl}
+            alt={movie.title}
+            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex size-full flex-col items-center justify-center bg-[#130E20] text-slate-500 p-4 text-center">
+            <Film size={32} className="text-slate-600 mb-2" />
+            <span className="text-[11px] font-semibold text-slate-400">Poster Unavailable</span>
+          </div>
+        )}
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#161224] via-transparent to-black/40" />

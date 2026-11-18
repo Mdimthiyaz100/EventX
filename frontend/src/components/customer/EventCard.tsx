@@ -43,15 +43,19 @@ export default function EventCard({ event }: EventCardProps) {
     <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-[#161224]/80 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:shadow-2xl hover:shadow-red-950/20 hover:-translate-y-1">
       {/* Top Media Section */}
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-900">
-        <img
-          src={
-            event.imageUrl ||
-            "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80"
-          }
-          alt={event.title}
-          className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+        {event.imageUrl ? (
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex size-full flex-col items-center justify-center bg-[#130E20] text-slate-500 p-4 text-center">
+            <span className="text-2xl mb-1">🎟️</span>
+            <span className="text-[11px] font-semibold text-slate-400">Event Image Pending</span>
+          </div>
+        )}
 
         {/* Gradient shadow overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#161224] via-transparent to-black/40" />

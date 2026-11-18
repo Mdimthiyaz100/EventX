@@ -30,9 +30,10 @@ export default function AdminDashboard() {
   const [addMenuOpen, setAddMenuOpen] = useState(false);
 
   // Formatting helpers
-  const formatInr = (amount: number | string) => {
+  const formatInr = (amount: number | string | undefined | null) => {
+    if (!amount) return "₹0";
     const num = Number(amount);
-    if (isNaN(num) || num === 0) return "₹36,74,200";
+    if (isNaN(num)) return "₹0";
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -40,18 +41,18 @@ export default function AdminDashboard() {
     }).format(num);
   };
 
-  const formatNumber = (val: number | undefined, defaultVal: number | string) => {
-    if (val === undefined || val === null) return defaultVal;
-    return val > 0 ? val.toLocaleString("en-IN") : defaultVal;
+  const formatNumber = (val: number | undefined | null) => {
+    if (val === undefined || val === null) return "0";
+    return val.toLocaleString("en-IN");
   };
 
-  // Values using real data with elegant fallbacks matching mockup
-  const movieCount = formatNumber(data?.totalMovies, 248);
-  const eventCount = formatNumber(data?.events, 64);
-  const comedyCount = formatNumber(data?.comedyShows, 38);
-  const diningCount = formatNumber(data?.diningPartners, 26);
-  const bookingCount = formatNumber(data?.bookings, "12,846");
-  const revenueVal = data?.grossRevenue ? formatInr(data.grossRevenue) : "₹36,74,200";
+  // Values strictly from Aiven MySQL database
+  const movieCount = formatNumber(data?.totalMovies);
+  const eventCount = formatNumber(data?.events);
+  const comedyCount = formatNumber(data?.comedyShows);
+  const diningCount = formatNumber(data?.diningPartners);
+  const bookingCount = formatNumber(data?.bookings);
+  const revenueVal = formatInr(data?.grossRevenue);
 
   // Content Management Cards
   const managementItems: ManagementItem[] = [

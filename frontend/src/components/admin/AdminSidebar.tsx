@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import {
   BarChart3,
   Calendar,
+  CreditCard,
   Film,
   Home,
   Layers,
@@ -28,6 +29,7 @@ export const navItems = [
   { label: "Dining", to: "/admin/dining", icon: Utensils },
   { label: "Categories", to: "/admin/categories", icon: Layers },
   { label: "Bookings", to: "/admin/bookings", icon: Ticket },
+  { label: "Payments", to: "/admin/payments", icon: CreditCard },
   { label: "Users", to: "/admin/users", icon: Users },
   { label: "Reports", to: "/admin/reports", icon: BarChart3 },
   { label: "Settings", to: "/admin/settings", icon: Settings },

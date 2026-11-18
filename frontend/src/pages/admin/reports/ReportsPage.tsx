@@ -66,10 +66,10 @@ export default function ReportsPage() {
             </div>
           </div>
           <p className="mt-3 text-2xl font-black text-slate-900">
-            {data?.bookings?.toLocaleString("en-IN") || "12,846"}
+            {data?.bookings !== undefined ? data.bookings.toLocaleString("en-IN") : "0"}
           </p>
           <p className="mt-1 text-[11px] text-emerald-600 font-bold">
-            +24% month-over-month
+            Total bookings in database
           </p>
         </div>
 
@@ -81,10 +81,10 @@ export default function ReportsPage() {
             </div>
           </div>
           <p className="mt-3 text-2xl font-black text-slate-900">
-            {data?.users?.toLocaleString("en-IN") || "1,420"}
+            {data?.users !== undefined ? data.users.toLocaleString("en-IN") : "0"}
           </p>
           <p className="mt-1 text-[11px] text-emerald-600 font-bold">
-            Community members
+            Active community members
           </p>
         </div>
 
@@ -96,10 +96,10 @@ export default function ReportsPage() {
             </div>
           </div>
           <p className="mt-3 text-2xl font-black text-slate-900">
-            {data?.totalMovies || 248}
+            {data?.totalMovies !== undefined ? data.totalMovies : 0}
           </p>
           <p className="mt-1 text-[11px] text-slate-400">
-            {data?.activeMovies || 190} currently published
+            {data?.activeMovies !== undefined ? data.activeMovies : 0} currently published
           </p>
         </div>
       </div>

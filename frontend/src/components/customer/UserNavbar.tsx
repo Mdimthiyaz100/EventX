@@ -1,19 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { MapPin, Search, ChevronDown, User, Heart, Ticket, LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
-
-export const CITY_OPTIONS = [
-  "Chennai",
-  "Mumbai",
-  "Bengaluru",
-  "Delhi NCR",
-  "Hyderabad",
-  "Kolkata",
-  "Pune",
-  "Kochi",
-];
+import { apiGet } from "../../services/api";
 
 export default function UserNavbar() {
   const { user, logout } = useAuth();
@@ -21,10 +11,24 @@ export default function UserNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [selectedCity, setSelectedCity] = useState("Chennai");
+  const [cities, setCities] = useState<string[]>([]);
+  const [selectedCity, setSelectedCity] = useState("All Cities");
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    void apiGet("/cities").then((res) => {
+      if (mounted && Array.isArray(res) && res.length > 0) {
+        setCities(res as string[]);
+        setSelectedCity(res[0] as string);
+      }
+    }).catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -92,23 +96,27 @@ export default function UserNavbar() {
                 <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Select Location
                 </div>
-                {CITY_OPTIONS.map((city) => (
-                  <button
-                    key={city}
-                    onClick={() => {
-                      setSelectedCity(city);
-                      setCityDropdownOpen(false);
-                    }}
-                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                      selectedCity === city
-                        ? "bg-[#E31824] text-white"
-                        : "text-slate-300 hover:bg-white/10"
-                    }`}
-                  >
-                    <span>{city}</span>
-                    {selectedCity === city && <span className="text-[10px]">✓</span>}
-                  </button>
-                ))}
+                {cities.length === 0 ? (
+                  <div className="px-3 py-2 text-xs text-slate-400">No active locations</div>
+                ) : (
+                  cities.map((city) => (
+                    <button
+                      key={city}
+                      onClick={() => {
+                        setSelectedCity(city);
+                        setCityDropdownOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                        selectedCity === city
+                          ? "bg-[#E31824] text-white"
+                          : "text-slate-300 hover:bg-white/10"
+                      }`}
+                    >
+                      <span>{city}</span>
+                      {selectedCity === city && <span className="text-[10px]">✓</span>}
+                    </button>
+                  ))
+                )}
               </div>
             )}
           </div>

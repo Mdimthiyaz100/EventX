@@ -4,17 +4,21 @@ import { Search, MapPin, X, Layers } from "lucide-react";
 import { apiGet } from "../../services/api";
 import type { EventItem } from "../../types/content";
 import EventCard from "../../components/customer/EventCard";
-import { CITY_OPTIONS } from "../../components/customer/UserNavbar";
 
-export default function ExploreEvents() {
+interface ExploreEventsProps {
+  initialCategoryPreset?: string;
+}
+
+export default function ExploreEvents({ initialCategoryPreset }: ExploreEventsProps = {}) {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const initialSearch = searchParams.get("search") || "";
   const initialCity = searchParams.get("city") || "";
-  const initialCategory = searchParams.get("category") || "";
+  const initialCategory = initialCategoryPreset || searchParams.get("category") || "";
 
   const [events, setEvents] = useState<EventItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -28,9 +32,10 @@ export default function ExploreEvents() {
     async function fetchData() {
       try {
         setLoading(true);
-        const [eventsRes, catsRes] = await Promise.allSettled([
+        const [eventsRes, catsRes, citiesRes] = await Promise.allSettled([
           apiGet("/events?limit=50"),
           apiGet("/categories"),
+          apiGet("/cities"),
         ]);
         if (mounted) {
           if (eventsRes.status === "fulfilled" && Array.isArray(eventsRes.value)) {
@@ -38,6 +43,9 @@ export default function ExploreEvents() {
           }
           if (catsRes.status === "fulfilled" && Array.isArray(catsRes.value)) {
             setCategories(catsRes.value as string[]);
+          }
+          if (citiesRes.status === "fulfilled" && Array.isArray(citiesRes.value)) {
+            setCities(citiesRes.value as string[]);
           }
         }
       } catch (err) {
@@ -132,7 +140,7 @@ export default function ExploreEvents() {
             <option value="" className="bg-[#161224] text-white">
               All Locations
             </option>
-            {CITY_OPTIONS.map((c) => (
+            {cities.map((c) => (
               <option key={c} value={c} className="bg-[#161224] text-white">
                 {c}
               </option>

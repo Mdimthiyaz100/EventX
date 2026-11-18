@@ -13,7 +13,9 @@ import {
   Plus,
   ArrowLeft
 } from "lucide-react";
-import { apiGet, apiRequest } from "../../services/api";
+import { apiGet } from "../../services/api";
+import { bookingService } from "../../services/booking.service";
+import { paymentService } from "../../services/payment.service";
 import type { EventItem } from "../../types/content";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
@@ -83,6 +85,8 @@ export default function EventDetails() {
   );
   const totalCount = selectedItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  const [idempotencyKey, setIdempotencyKey] = useState<string>("");
+
   // Handle Ticket Booking
   const handleCheckout = async () => {
     if (!user) {
@@ -97,6 +101,12 @@ export default function EventDetails() {
     setBookingError("");
     setBookingBusy(true);
 
+    // Reuse idempotency key for retries of the same booking attempt
+    const currentKey = idempotencyKey || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `idemp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+    if (!idempotencyKey) {
+      setIdempotencyKey(currentKey);
+    }
+
     try {
       const bookingPayload = {
         eventId: event!.id,
@@ -106,9 +116,24 @@ export default function EventDetails() {
         })),
       };
 
-      const result: any = await apiRequest("POST", "/bookings", bookingPayload);
+      const result = await bookingService.createBooking(bookingPayload, currentKey);
+      
+      // Optionally request payment link if supported
+      try {
+        if (result && result.id) {
+          const paymentLink = await paymentService.createPaymentLink(result.id);
+          if (paymentLink && paymentLink.paymentUrl) {
+            window.location.href = paymentLink.paymentUrl;
+            return;
+          }
+        }
+      } catch {
+        // Fall back to showing confirmed booking ID directly if payment provider is in test/mock mode
+      }
+
       setBookingSuccess(result?.id || "CONFIRMED");
       setQuantities({});
+      setIdempotencyKey("");
     } catch (err: any) {
       setBookingError(err.message || "Booking failed. Please try again.");
     } finally {
@@ -158,14 +183,15 @@ export default function EventDetails() {
     <div className="relative pb-24">
       {/* 1. HERO BANNER BACKDROP */}
       <div className="relative h-[340px] sm:h-[420px] lg:h-[480px] w-full overflow-hidden bg-slate-950">
-        <img
-          src={
-            event.imageUrl ||
-            "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1920&q=80"
-          }
-          alt={event.title}
-          className="size-full object-cover filter brightness-65 scale-105"
-        />
+        {event.imageUrl ? (
+          <img
+            src={event.imageUrl}
+            alt={event.title}
+            className="size-full object-cover filter brightness-65 scale-105"
+          />
+        ) : (
+          <div className="size-full bg-gradient-to-br from-[#1b152e] to-[#0A0713]" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#0A0713] via-[#0A0713]/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0A0713]/90 via-transparent to-[#0A0713]/90" />
 
