@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import bcrypt from "bcryptjs";
 import type { Prisma, PrismaClient, User, UserRole } from "@prisma/client";
 import jwt from "jsonwebtoken";
@@ -223,4 +223,257 @@ export function verifyAccessToken(token: string): TokenClaims {
     issuer: "eventx-api",
     audience: "eventx-client",
   }) as TokenClaims;
+}
+
+export function normalizeSecurityAnswer(answer: string): string {
+  return answer.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+export async function getActiveSecurityQuestions() {
+  return prisma.securityQuestion.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      question: true,
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export async function getUserSecurityStatus(userId: string) {
+  const count = await prisma.userSecurityAnswer.count({ where: { userId } });
+  return { hasSecurityQuestions: count >= 3, count };
+}
+
+export async function setupUserSecurityQuestions(
+  userId: string,
+  answers: Array<{ questionId: string; answer: string }>,
+) {
+  const questionIds = answers.map((a) => a.questionId);
+  const validQuestions = await prisma.securityQuestion.findMany({
+    where: { id: { in: questionIds }, isActive: true },
+    select: { id: true },
+  });
+
+  if (validQuestions.length !== 3) {
+    throw new AppError(400, "INVALID_QUESTIONS", "One or more selected security questions are invalid or inactive.");
+  }
+
+  const hashedData = await Promise.all(
+    answers.map(async (item) => ({
+      userId,
+      questionId: item.questionId,
+      answerHash: await bcrypt.hash(normalizeSecurityAnswer(item.answer), 12),
+    })),
+  );
+
+  await prisma.$transaction(async (tx) => {
+    await tx.userSecurityAnswer.deleteMany({ where: { userId } });
+    await tx.userSecurityAnswer.createMany({ data: hashedData });
+  });
+
+  return { success: true, message: "Security questions configured successfully." };
+}
+
+export async function forgotPasswordInitiate(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    select: {
+      id: true,
+      securityAnswers: {
+        select: {
+          questionId: true,
+          question: {
+            select: {
+              id: true,
+              question: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // Security: If user does not exist or has not configured 3 security questions,
+  // return a success response without leaking user existence.
+  if (!user || user.securityAnswers.length < 3) {
+    return {
+      hasQuestions: false,
+      questions: [],
+    };
+  }
+
+  return {
+    hasQuestions: true,
+    questions: user.securityAnswers.map((sa) => ({
+      questionId: sa.question.id,
+      question: sa.question.question,
+    })),
+  };
+}
+
+export async function verifySecurityAnswers(
+  email: string,
+  submittedAnswers: Array<{ questionId: string; answer: string }>,
+) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+    include: {
+      securityAnswers: true,
+      recoveryAttempts: true,
+    },
+  });
+
+  // Generic rejection if account not found or questions not configured
+  if (!user || user.securityAnswers.length < 3) {
+    throw new AppError(400, "VERIFICATION_FAILED", "Invalid security answers or user not eligible for security recovery.");
+  }
+
+  const now = new Date();
+  let attemptRecord = user.recoveryAttempts;
+
+  if (attemptRecord?.lockedUntil && attemptRecord.lockedUntil > now) {
+    const minutesLeft = Math.ceil((attemptRecord.lockedUntil.getTime() - now.getTime()) / 60000);
+    throw new AppError(
+      429,
+      "ACCOUNT_LOCKED",
+      `Too many failed attempts. Security question recovery is locked. Try again in ${minutesLeft} minutes.`,
+    );
+  }
+
+  // Map answers
+  const storedAnswersMap = new Map(user.securityAnswers.map((sa) => [sa.questionId, sa.answerHash]));
+
+  let allMatch = submittedAnswers.length === 3;
+  if (allMatch) {
+    for (const item of submittedAnswers) {
+      const storedHash = storedAnswersMap.get(item.questionId);
+      if (!storedHash) {
+        allMatch = false;
+        break;
+      }
+      const matches = await bcrypt.compare(normalizeSecurityAnswer(item.answer), storedHash);
+      if (!matches) {
+        allMatch = false;
+        break;
+      }
+    }
+  }
+
+  if (!allMatch) {
+    // Increment failed attempts
+    const newCount = (attemptRecord?.failedAttempts || 0) + 1;
+    const shouldLock = newCount >= 5;
+    const lockedUntil = shouldLock ? new Date(Date.now() + 15 * 60 * 1000) : null;
+
+    await prisma.passwordRecoveryAttempt.upsert({
+      where: { userId: user.id },
+      create: {
+        userId: user.id,
+        failedAttempts: newCount,
+        lockedUntil,
+      },
+      update: {
+        failedAttempts: newCount,
+        lockedUntil,
+      },
+    });
+
+    if (shouldLock) {
+      throw new AppError(
+        429,
+        "MAX_ATTEMPTS_EXCEEDED",
+        "Maximum verification attempts exceeded (5/5). Account recovery locked for 15 minutes.",
+      );
+    }
+
+    const remaining = 5 - newCount;
+    throw new AppError(
+      400,
+      "INCORRECT_ANSWERS",
+      `One or more answers are incorrect. You have ${remaining} ${remaining === 1 ? "attempt" : "attempts"} remaining.`,
+    );
+  }
+
+  // Verification succeeded - reset failure counter & generate single-use recovery token
+  await prisma.passwordRecoveryAttempt.upsert({
+    where: { userId: user.id },
+    create: { userId: user.id, failedAttempts: 0, lockedUntil: null },
+    update: { failedAttempts: 0, lockedUntil: null },
+  });
+
+  const rawRecoveryToken = randomBytes(32).toString("hex");
+  const hashedRecoveryToken = hashToken(rawRecoveryToken);
+  const tokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      tokenHash: hashedRecoveryToken,
+      expiresAt: tokenExpiry,
+    },
+  });
+
+  return {
+    verified: true,
+    recoveryToken: rawRecoveryToken,
+    expiresIn: 600,
+  };
+}
+
+export async function resetPasswordWithSecurityToken(rawRecoveryToken: string, newPassword: string) {
+  const tokenHash = hashToken(rawRecoveryToken);
+  const now = new Date();
+
+  const tokenRecord = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash },
+    include: { user: true },
+  });
+
+  if (!tokenRecord) {
+    throw new AppError(400, "INVALID_TOKEN", "Recovery token is invalid or has expired.");
+  }
+
+  if (tokenRecord.usedAt !== null) {
+    throw new AppError(400, "TOKEN_ALREADY_USED", "This recovery token has already been used.");
+  }
+
+  if (tokenRecord.expiresAt < now) {
+    throw new AppError(400, "TOKEN_EXPIRED", "This recovery token has expired. Please restart password recovery.");
+  }
+
+  const newHash = await bcrypt.hash(newPassword, 12);
+
+  await prisma.$transaction(async (tx) => {
+    // 1. Mark recovery token as used
+    await tx.passwordResetToken.update({
+      where: { id: tokenRecord.id },
+      data: { usedAt: now },
+    });
+
+    // 2. Invalidate all other recovery tokens for this user
+    await tx.passwordResetToken.updateMany({
+      where: { userId: tokenRecord.userId, usedAt: null },
+      data: { usedAt: now },
+    });
+
+    // 3. Invalidate all existing refresh tokens (sessions)
+    await tx.refreshToken.updateMany({
+      where: { userId: tokenRecord.userId, revokedAt: null },
+      data: { revokedAt: now },
+    });
+
+    // 4. Update password
+    await tx.user.update({
+      where: { id: tokenRecord.userId },
+      data: { passwordHash: newHash },
+    });
+  });
+
+  return {
+    success: true,
+    message: "Password has been reset successfully. Please sign in with your new credentials.",
+  };
 }

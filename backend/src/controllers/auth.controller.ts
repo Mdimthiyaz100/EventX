@@ -30,3 +30,42 @@ export const updateMe: RequestHandler = async (request, response) => {
     await authService.updateProfile(request.auth!.userId, request.body),
   );
 };
+
+export const getSecurityQuestions: RequestHandler = async (_request, response) => {
+  const questions = await authService.getActiveSecurityQuestions();
+  sendData(response, questions);
+};
+
+export const getSecurityStatus: RequestHandler = async (request, response) => {
+  const status = await authService.getUserSecurityStatus(request.auth!.userId);
+  sendData(response, status);
+};
+
+export const setupSecurityQuestions: RequestHandler = async (request, response) => {
+  const result = await authService.setupUserSecurityQuestions(
+    request.auth!.userId,
+    request.body.answers,
+  );
+  sendData(response, result);
+};
+
+export const forgotPassword: RequestHandler = async (request, response) => {
+  const result = await authService.forgotPasswordInitiate(request.body.email);
+  sendData(response, result);
+};
+
+export const verifySecurityAnswers: RequestHandler = async (request, response) => {
+  const result = await authService.verifySecurityAnswers(
+    request.body.email,
+    request.body.answers,
+  );
+  sendData(response, result);
+};
+
+export const resetPasswordSecurity: RequestHandler = async (request, response) => {
+  const result = await authService.resetPasswordWithSecurityToken(
+    request.body.recoveryToken,
+    request.body.newPassword,
+  );
+  sendData(response, result);
+};

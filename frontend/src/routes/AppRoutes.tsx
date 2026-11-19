@@ -25,6 +25,9 @@ import PortalLanding from "../pages/public/PortalLanding";
 import UserLogin from "../pages/public/Login";
 import Register from "../pages/public/Register";
 import ForgotPassword from "../pages/public/ForgotPassword";
+import VerifySecurityQuestions from "../pages/public/VerifySecurityQuestions";
+import ResetPassword from "../pages/public/ResetPassword";
+import SecurityQuestionsSettings from "../pages/customer/SecurityQuestionsSettings";
 
 // Organizer Pages
 import OrganizerDashboard from "../pages/organizer/Dashboard";
@@ -113,6 +116,14 @@ export default function AppRoutes() {
             }
           />
           <Route
+            path="/security-questions"
+            element={
+              <RoleProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
+                <SecurityQuestionsSettings />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard"
             element={
               <RoleProtectedRoute allowedRoles={["CUSTOMER"]} redirectTo="/login">
@@ -128,6 +139,8 @@ export default function AppRoutes() {
         <Route path="/login" element={<UserLogin />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-security-questions" element={<VerifySecurityQuestions />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/admin/login" element={<AdminLogin />} />
 
         {/* ================= ORGANIZER ROUTES ================= */}

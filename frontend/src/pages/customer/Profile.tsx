@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, ShieldCheck, CheckCircle2, AlertCircle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { User, Mail, Phone, ShieldCheck, CheckCircle2, AlertCircle, KeyRound, ChevronRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { userService, type UserProfile } from "../../services/user.service";
 
@@ -132,11 +133,22 @@ export default function CustomerProfile() {
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
               <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs text-white/40">
                 <ShieldCheck size={16} className="text-[#E31824]" />
                 <span>Account Role: <strong className="text-white/80">{profile?.role || "CUSTOMER"}</strong></span>
               </div>
+
+              <Link
+                to="/security-questions"
+                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3.5 text-xs font-semibold text-white transition hover:border-[#E31824]/40 hover:bg-white/10"
+              >
+                <div className="flex items-center gap-2.5">
+                  <KeyRound size={16} className="text-[#E31824]" />
+                  <span>Configure Security Questions</span>
+                </div>
+                <ChevronRight size={14} className="text-white/40" />
+              </Link>
             </div>
 
             <button
