@@ -4,18 +4,32 @@ export default {
   theme: {
     extend: {
       colors: {
-        cream: "#F8F4EC",
-        paper: "#fffaf2",
-        ink: "#171513",
-        eventx: "#d71920",
-        "eventx-dark": "#a90f17",
+        background: "#000000",
+        "background-secondary": "#0A0A0A",
+        surface: "#111111",
+        "surface-elevated": "#171717",
+        eventx: {
+          DEFAULT: "#ED1C24",
+          hover: "#FF3038",
+          dark: "#B80E14",
+          light: "#FF5C62",
+        },
+        border: {
+          DEFAULT: "#292929",
+          subtle: "#1F1F1F",
+          active: "#ED1C24",
+        },
+        primary: "#FFFFFF",
+        secondary: "#BDBDBD",
+        muted: "#777777",
       },
       fontFamily: {
         sans: ["DM Sans", "sans-serif"],
         display: ["Barlow Condensed", "sans-serif"],
       },
       boxShadow: {
-        soft: "0 16px 40px rgba(48, 30, 19, .10)",
+        glow: "0 0 25px -5px rgba(237, 28, 36, 0.35)",
+        card: "0 8px 30px rgba(0, 0, 0, 0.7)",
       },
     },
   },

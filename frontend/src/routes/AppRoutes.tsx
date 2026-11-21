@@ -1,6 +1,7 @@
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { WishlistProvider } from "../context/WishlistContext";
-import RoleProtectedRoute from "../components/auth/RoleProtectedRoute";
+import PublicRoute from "./PublicRoute";
+import RoleBasedRoute from "./RoleBasedRoute";
 
 // Layouts
 import PublicLayout from "../layouts/PublicLayout";
@@ -13,6 +14,11 @@ import ExploreEvents from "../pages/public/ExploreEvents";
 import CategoryEvents from "../pages/public/CategoryEvents";
 import CategoryPresetPage from "../pages/public/CategoryPresetPage";
 import EventDetails from "../pages/public/EventDetails";
+import SeatSelection from "../pages/public/SeatSelection";
+import Checkout from "../pages/public/Checkout";
+import BookingConfirmation from "../pages/public/BookingConfirmation";
+import Dining from "../pages/public/Dining";
+import Sports from "../pages/public/Sports";
 import PublicMovies from "../pages/public/Movies";
 import MovieDetails from "../pages/public/MovieDetails";
 import WishlistPage from "../pages/public/WishlistPage";
@@ -21,6 +27,7 @@ import MyTickets from "../pages/public/MyTickets";
 import CustomerProfile from "../pages/customer/Profile";
 import BookingDetails from "../pages/customer/BookingDetails";
 import CustomerDashboard from "../pages/customer/Dashboard";
+import Rewards from "../pages/customer/Rewards";
 import PortalLanding from "../pages/public/PortalLanding";
 import UserLogin from "../pages/public/Login";
 import Register from "../pages/public/Register";
@@ -28,15 +35,23 @@ import ForgotPassword from "../pages/public/ForgotPassword";
 import VerifySecurityQuestions from "../pages/public/VerifySecurityQuestions";
 import ResetPassword from "../pages/public/ResetPassword";
 import SecurityQuestionsSettings from "../pages/customer/SecurityQuestionsSettings";
+import NotFound from "../pages/public/NotFound";
 
 // Organizer Pages
 import OrganizerDashboard from "../pages/organizer/Dashboard";
+import OrganizerLogin from "../pages/organizer/OrganizerLogin";
+import OrganizerRegister from "../pages/organizer/OrganizerRegister";
 import OrganizerMyEvents from "../pages/organizer/MyEvents";
 import CreateOrganizerEvent from "../pages/organizer/CreateEvent";
 import EditOrganizerEvent from "../pages/organizer/EditEvent";
 import OrganizerBookings from "../pages/organizer/Bookings";
 import OrganizerTicketManagement from "../pages/organizer/TicketManagement";
 import OrganizerProfile from "../pages/organizer/Profile";
+import OrganizerCalendar from "../pages/organizer/Calendar";
+import OrganizerReports from "../pages/organizer/Reports";
+import OrganizerMessages from "../pages/organizer/Messages";
+import OrganizerTeam from "../pages/organizer/Team";
+import OrganizerSettings from "../pages/organizer/Settings";
 
 // Admin Pages
 import AdminLogin from "../pages/admin/AdminLogin";
@@ -59,18 +74,24 @@ export default function AppRoutes() {
   return (
     <WishlistProvider>
       <Routes>
-        {/* ================= PUBLIC ROUTES ================= */}
+        {/* ================= PUBLIC & CUSTOMER ROUTES ================= */}
         <Route element={<PublicLayout><Outlet /></PublicLayout>}>
           <Route path="/" element={<Home />} />
           <Route path="/events" element={<ExploreEvents />} />
           <Route path="/events/:id" element={<EventDetails />} />
+          <Route path="/events/:id/seats" element={<SeatSelection />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/booking-confirmed/:bookingId" element={<BookingConfirmation />} />
           <Route path="/category/:categoryName" element={<CategoryEvents />} />
+
+          {/* New Entertainment Verticals */}
+          <Route path="/dining" element={<Dining />} />
+          <Route path="/sports" element={<Sports />} />
 
           {/* Category Aliases */}
           <Route path="/comedy" element={<CategoryPresetPage categoryName="Comedy" />} />
           <Route path="/concerts" element={<CategoryPresetPage categoryName="Concerts" />} />
           <Route path="/theatre" element={<CategoryPresetPage categoryName="Theatre" />} />
-          <Route path="/sports" element={<CategoryPresetPage categoryName="Sports" />} />
           <Route path="/workshops" element={<CategoryPresetPage categoryName="Workshops" />} />
           <Route path="/search" element={<ExploreEvents />} />
 
@@ -82,76 +103,154 @@ export default function AppRoutes() {
           <Route path="/favorites" element={<WishlistPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
 
+          {/* Customer Hub & Rewards */}
+          <Route path="/rewards" element={<Rewards />} />
+
           {/* Customer Protected Pages */}
           <Route
             path="/my-bookings"
             element={
-              <RoleProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
+              <RoleBasedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
                 <MyBookings />
-              </RoleProtectedRoute>
+              </RoleBasedRoute>
             }
           />
           <Route
             path="/my-bookings/:id"
             element={
-              <RoleProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
+              <RoleBasedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
                 <BookingDetails />
-              </RoleProtectedRoute>
+              </RoleBasedRoute>
             }
           />
           <Route
             path="/my-tickets"
             element={
-              <RoleProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
+              <RoleBasedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
                 <MyTickets />
-              </RoleProtectedRoute>
+              </RoleBasedRoute>
             }
           />
           <Route
             path="/profile"
             element={
-              <RoleProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
+              <RoleBasedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
                 <CustomerProfile />
-              </RoleProtectedRoute>
+              </RoleBasedRoute>
             }
           />
           <Route
             path="/security-questions"
             element={
-              <RoleProtectedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
+              <RoleBasedRoute allowedRoles={["CUSTOMER", "ORGANIZER", "ADMIN"]} redirectTo="/login">
                 <SecurityQuestionsSettings />
-              </RoleProtectedRoute>
+              </RoleBasedRoute>
             }
           />
           <Route
             path="/dashboard"
             element={
-              <RoleProtectedRoute allowedRoles={["CUSTOMER"]} redirectTo="/login">
+              <RoleBasedRoute allowedRoles={["CUSTOMER"]} redirectTo="/login">
                 <CustomerDashboard />
-              </RoleProtectedRoute>
+              </RoleBasedRoute>
             }
           />
+
+          {/* 404 Route within Public Layout */}
+          <Route path="/404" element={<NotFound />} />
         </Route>
 
-        {/* ================= AUTH & PORTAL SELECTION ================= */}
-        <Route path="/choose-portal" element={<PortalLanding />} />
-        <Route path="/portal" element={<PortalLanding />} />
-        <Route path="/login" element={<UserLogin />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/verify-security-questions" element={<VerifySecurityQuestions />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
+        {/* ================= GUEST AUTH ROUTES ================= */}
+        <Route
+          path="/choose-portal"
+          element={
+            <PublicRoute>
+              <PortalLanding />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/portal"
+          element={
+            <PublicRoute>
+              <PortalLanding />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute restrictedToGuest>
+              <UserLogin />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicRoute restrictedToGuest>
+              <Register />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute restrictedToGuest>
+              <ForgotPassword />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/verify-security-questions"
+          element={
+            <PublicRoute restrictedToGuest>
+              <VerifySecurityQuestions />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <PublicRoute restrictedToGuest>
+              <ResetPassword />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/admin/login"
+          element={
+            <PublicRoute restrictedToGuest>
+              <AdminLogin />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/organizer/login"
+          element={
+            <PublicRoute restrictedToGuest>
+              <OrganizerLogin />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/organizer/register"
+          element={
+            <PublicRoute restrictedToGuest>
+              <OrganizerRegister />
+            </PublicRoute>
+          }
+        />
 
         {/* ================= ORGANIZER ROUTES ================= */}
         <Route
           path="/organizer"
           element={
-            <RoleProtectedRoute allowedRoles={["ORGANIZER", "ADMIN"]} redirectTo="/login">
+            <RoleBasedRoute allowedRoles={["ORGANIZER", "ADMIN"]} redirectTo="/login">
               <OrganizerLayout>
                 <Outlet />
               </OrganizerLayout>
-            </RoleProtectedRoute>
+            </RoleBasedRoute>
           }
         >
           <Route index element={<Navigate replace to="/organizer/dashboard" />} />
@@ -160,6 +259,11 @@ export default function AppRoutes() {
           <Route path="events/create" element={<CreateOrganizerEvent />} />
           <Route path="events/:id/edit" element={<EditOrganizerEvent />} />
           <Route path="bookings" element={<OrganizerBookings />} />
+          <Route path="calendar" element={<OrganizerCalendar />} />
+          <Route path="reports" element={<OrganizerReports />} />
+          <Route path="messages" element={<OrganizerMessages />} />
+          <Route path="team" element={<OrganizerTeam />} />
+          <Route path="settings" element={<OrganizerSettings />} />
           <Route path="tickets" element={<OrganizerTicketManagement />} />
           <Route path="profile" element={<OrganizerProfile />} />
           <Route path="*" element={<Navigate replace to="/organizer/dashboard" />} />
@@ -169,11 +273,11 @@ export default function AppRoutes() {
         <Route
           path="/admin"
           element={
-            <RoleProtectedRoute allowedRoles={["ADMIN"]} redirectTo="/admin/login">
+            <RoleBasedRoute allowedRoles={["ADMIN"]} redirectTo="/admin/login">
               <AdminLayout>
                 <Outlet />
               </AdminLayout>
-            </RoleProtectedRoute>
+            </RoleBasedRoute>
           }
         >
           <Route index element={<AdminDashboard />} />
@@ -218,8 +322,15 @@ export default function AppRoutes() {
           <Route path="*" element={<Navigate replace to="/admin/dashboard" />} />
         </Route>
 
-        {/* Global Fallback */}
-        <Route path="*" element={<Navigate replace to="/" />} />
+        {/* ================= GLOBAL 404 CATCH-ALL ================= */}
+        <Route
+          path="*"
+          element={
+            <PublicLayout>
+              <NotFound />
+            </PublicLayout>
+          }
+        />
       </Routes>
     </WishlistProvider>
   );

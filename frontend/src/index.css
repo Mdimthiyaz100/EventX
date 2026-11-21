@@ -5,8 +5,8 @@
 @tailwind utilities;
 
 :root {
-  color: #171513;
-  background: #f8f4ec;
+  color: #FFFFFF;
+  background: #000000;
   font-family: "DM Sans", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,62 +22,58 @@
 body {
   min-width: 320px;
   margin: 0;
+  background-color: #000000;
+  color: #FFFFFF;
 }
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
 ::selection {
-  color: #fff;
-  background: #d71920;
+  color: #FFFFFF;
+  background: #ED1C24;
 }
 
-.hero-section {
-  isolation: isolate;
+/* Custom scrollbars for dark cinema aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.organizer-section {
-  isolation: isolate;
+::-webkit-scrollbar-track {
+  background: #0A0A0A;
 }
 
-.organizer-phone-wrap {
-  justify-content: center;
-  transform: translateY(3.5rem);
+::-webkit-scrollbar-thumb {
+  background: #292929;
+  border-radius: 4px;
 }
 
-.organizer-phone {
-  width: 255px;
-  padding: 14px;
-  border: 5px solid #141414;
-  border-radius: 2.4rem;
-  background: #fffaf2;
-  color: #171513;
-  box-shadow: 0 25px 70px rgb(0 0 0 / 38%);
-  transform: rotate(3deg);
+::-webkit-scrollbar-thumb:hover {
+  background: #ED1C24;
 }
 
-.skeleton {
-  background: linear-gradient(100deg, #e7dfd4 20%, #f5eee4 40%, #e7dfd4 60%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-@keyframes shimmer {
-  to {
-    background-position-x: -200%;
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(237, 28, 36, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(237, 28, 36, 0.7);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+.animate-glow {
+  animation: pulseGlow 2.5s infinite;
 }

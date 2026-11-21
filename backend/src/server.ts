@@ -284,13 +284,16 @@ app.get(
 );
 
 app.use("/api/auth", authRoutes);
+app.use("/api/v1/auth", authRoutes);
 app.use("/api/movies", publicMovieRouter);
 app.use("/api/admin/movies", adminMovieRouter);
 app.use("/api/events", eventRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/organizer", organizerRoutes);
+app.use("/api/v1/organizer", organizerRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/v1/admin", adminRoutes);
 app.use((_request, _response, next) => {
   next(new AppError(404, "NOT_FOUND", "Route not found."));
 });

@@ -6,13 +6,15 @@ export interface SessionUser {
   name: string;
   email: string;
   role: "CUSTOMER" | "ORGANIZER" | "ADMIN";
+  organizerCategory?: string;
 }
 
 interface AuthContextValue {
   user: SessionUser | null;
   loading: boolean;
   login: (email: string, password: string, requiredRole?: "ADMIN" | "CUSTOMER") => Promise<SessionUser>;
-  register: (payload: { name: string; email: string; password: string; phone?: string }) => Promise<void>;
+  loginAsOrganizer: (email: string, password: string) => Promise<SessionUser>;
+  register: (payload: { name: string; email: string; password: string; phone?: string; accountType?: "CUSTOMER" | "ORGANIZER" }) => Promise<void>;
   logout: () => void;
 }
 
@@ -49,10 +51,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result.user;
   }, []);
 
-  const register = useCallback(async (payload: { name: string; email: string; password: string; phone?: string }) => {
+  const loginAsOrganizer = useCallback(async (email: string, password: string) => {
+    const result = await apiRequest<{ accessToken: string; refreshToken: string; user: SessionUser }>("POST", "/auth/organizer/login", { email, password });
+    localStorage.setItem(AUTH_TOKEN_KEY, result.accessToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, result.refreshToken);
+    setUser(result.user);
+    return result.user;
+  }, []);
+
+  const register = useCallback(async (payload: { name: string; email: string; password: string; phone?: string; accountType?: "CUSTOMER" | "ORGANIZER" }) => {
     await apiRequest<{ accessToken: string; refreshToken: string; user: SessionUser }>("POST", "/auth/register", {
       ...payload,
-      accountType: "CUSTOMER",
+      accountType: payload.accountType ?? "CUSTOMER",
     });
   }, []);
 
@@ -64,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  const value = useMemo(() => ({ user, loading, login, register, logout }), [user, loading, login, register, logout]);
+  const value = useMemo(() => ({ user, loading, login, loginAsOrganizer, register, logout }), [user, loading, login, loginAsOrganizer, register, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

@@ -7,6 +7,16 @@ export const register: RequestHandler = async (request, response) => {
   sendData(response, result, 201);
 };
 
+export const registerOrganizer: RequestHandler = async (request, response) => {
+  const result = await authService.registerOrganizer(request.body);
+  sendData(response, result, 201);
+};
+
+export const loginOrganizer: RequestHandler = async (request, response) => {
+  const result = await authService.loginOrganizer(request.body);
+  sendData(response, result);
+};
+
 export const login: RequestHandler = async (request, response) => {
   sendData(response, await authService.login(request.body));
 };

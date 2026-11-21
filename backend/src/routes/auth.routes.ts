@@ -7,6 +7,8 @@ import { asyncHandler } from "../utils/http.js";
 import {
   forgotPasswordInitiateSchema,
   loginSchema,
+  organizerLoginSchema,
+  organizerRegisterSchema,
   profileSchema,
   refreshSchema,
   registerSchema,
@@ -32,6 +34,20 @@ const recoveryLimiter = rateLimit({
 
 router.post("/register", authLimiter, validateBody(registerSchema), asyncHandler(authController.register));
 router.post("/login", authLimiter, validateBody(loginSchema), asyncHandler(authController.login));
+
+// Dedicated Organizer Authentication Endpoints
+router.post(
+  "/organizer/register",
+  authLimiter,
+  validateBody(organizerRegisterSchema),
+  asyncHandler(authController.registerOrganizer),
+);
+router.post(
+  "/organizer/login",
+  authLimiter,
+  validateBody(organizerLoginSchema),
+  asyncHandler(authController.loginOrganizer),
+);
 router.post("/refresh", authLimiter, validateBody(refreshSchema), asyncHandler(authController.refresh));
 router.post("/logout", validateBody(refreshSchema), asyncHandler(authController.logout));
 router.get("/me", requireAuth, asyncHandler(authController.me));

@@ -10,6 +10,31 @@ export const registerSchema = z
   })
   .strict();
 
+export const organizerRegisterSchema = z
+  .object({
+    organizerCategory: z.enum([
+      "Sports",
+      "Cinema / Theatre",
+      "Concert",
+      "Comedy",
+      "Workshop",
+      "General Events",
+    ]),
+    contactName: z.string().trim().min(2).max(120),
+    organizationName: z.string().trim().min(2).max(120),
+    email: z.string().trim().email("Please enter a valid email address.").max(191),
+    phone: z.string().regex(/^\+?[0-9\s-]{7,16}$/, "Please enter a valid phone number."),
+    password: z.string().min(8, "Password must be at least 8 characters long.").max(128),
+  })
+  .strict();
+
+export const organizerLoginSchema = z
+  .object({
+    email: z.string().trim().email("Please enter a valid email address.").max(191),
+    password: z.string().min(1, "Password is required.").max(128),
+  })
+  .strict();
+
 export const loginSchema = z
   .object({
     email: z.string().trim().email().max(191),

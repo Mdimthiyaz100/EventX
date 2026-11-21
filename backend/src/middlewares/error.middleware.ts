@@ -92,9 +92,24 @@ export const errorMiddleware: ErrorRequestHandler = (
       return;
     }
     if (error.code === "P2002") {
+      const target = (error.meta as { target?: string[] | string })?.target;
+      let message = "A record with these details already exists.";
+      if (Array.isArray(target)) {
+        if (target.includes("email")) {
+          message = "This email address is already registered.";
+        } else if (target.includes("phone")) {
+          message = "This phone number is already associated with an account.";
+        }
+      } else if (typeof target === "string") {
+        if (target.includes("email")) {
+          message = "This email address is already registered.";
+        } else if (target.includes("phone")) {
+          message = "This phone number is already associated with an account.";
+        }
+      }
       response.status(409).json({
         success: false,
-        error: { code: "CONFLICT", message: "A record with these details already exists." },
+        error: { code: "CONFLICT", message },
       });
       return;
     }

@@ -17,7 +17,13 @@ interface AuthTokens {
   refreshToken: string;
   tokenType: "Bearer";
   expiresIn: number;
-  user: { id: string; name: string; email: string; role: UserRole };
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: UserRole;
+    organizerCategory?: string;
+  };
 }
 
 function accessExpirySeconds(): number {
@@ -32,8 +38,20 @@ function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
+function parseCategoryFromName(fullName: string): string {
+  const match = /\[(.*?)\]/.exec(fullName);
+  return match && match[1] ? match[1].trim() : "General Events";
+}
+
 function safeUser(user: User): AuthTokens["user"] {
-  return { id: user.id, name: user.name, email: user.email, role: user.role };
+  const organizerCategory = user.role === "ORGANIZER" ? parseCategoryFromName(user.name) : undefined;
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    ...(organizerCategory ? { organizerCategory } : {}),
+  };
 }
 
 function signAccessToken(user: Pick<User, "id" | "role">): string {
@@ -94,16 +112,120 @@ export async function register(input: {
   phone?: string;
   accountType?: "CUSTOMER" | "ORGANIZER";
 }): Promise<AuthTokens> {
+  const normalizedEmail = input.email.toLowerCase().trim();
+  const existingEmail = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
+  if (existingEmail) {
+    throw new AppError(409, "EMAIL_ALREADY_EXISTS", "This email address is already registered.");
+  }
+
+  const normalizedPhone = input.phone?.trim() ? input.phone.trim() : null;
+  if (normalizedPhone) {
+    const existingPhone = await prisma.user.findUnique({
+      where: { phone: normalizedPhone },
+    });
+    if (existingPhone) {
+      throw new AppError(409, "PHONE_ALREADY_EXISTS", "This phone number is already associated with an account.");
+    }
+  }
+
   const user = await prisma.user.create({
     data: {
       name: input.name,
-      email: input.email.toLowerCase(),
-      phone: input.phone,
+      email: normalizedEmail,
+      phone: normalizedPhone,
       passwordHash: await bcrypt.hash(input.password, 12),
       role: input.accountType ?? "CUSTOMER",
+      organizerApproved: false,
     },
   });
   return createTokenPair(user);
+}
+
+export async function registerOrganizer(input: {
+  organizerCategory: string;
+  contactName: string;
+  organizationName: string;
+  email: string;
+  phone: string;
+  password: string;
+}) {
+  const normalizedEmail = input.email.toLowerCase().trim();
+  const existingEmail = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
+  if (existingEmail) {
+    throw new AppError(409, "EMAIL_ALREADY_EXISTS", "This email address is already registered.");
+  }
+
+  const normalizedPhone = input.phone.trim();
+  const existingPhone = await prisma.user.findUnique({
+    where: { phone: normalizedPhone },
+  });
+  if (existingPhone) {
+    throw new AppError(409, "PHONE_ALREADY_EXISTS", "This phone number is already associated with an account.");
+  }
+
+  // Construct composite organization profile in user name: "Organization Name (Contact Name) [Category]"
+  const compositeName = `${input.organizationName} (${input.contactName}) [${input.organizerCategory}]`;
+
+  const user = await prisma.user.create({
+    data: {
+      name: compositeName,
+      email: normalizedEmail,
+      phone: normalizedPhone,
+      passwordHash: await bcrypt.hash(input.password, 12),
+      role: "ORGANIZER",
+      organizerApproved: false,
+    },
+  });
+
+  return {
+    id: user.id,
+    name: user.name,
+    organizationName: input.organizationName,
+    contactName: input.contactName,
+    organizerCategory: input.organizerCategory,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    status: "PENDING",
+    organizerApproved: false,
+    message: "Your organizer application has been submitted successfully and is pending administrator approval.",
+  };
+}
+
+export async function loginOrganizer(input: {
+  email: string;
+  password: string;
+}): Promise<AuthTokens & { organizerStatus: "APPROVED" | "PENDING" }> {
+  const normalizedEmail = input.email.toLowerCase().trim();
+  const user = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
+
+  if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
+    throw new AppError(401, "INVALID_CREDENTIALS", "Email or password is incorrect.");
+  }
+
+  if (user.role !== "ORGANIZER" && user.role !== "ADMIN") {
+    throw new AppError(403, "NOT_AN_ORGANIZER", "This account is not registered as an organizer.");
+  }
+
+  if (!user.organizerApproved && user.role !== "ADMIN") {
+    throw new AppError(
+      403,
+      "APPLICATION_PENDING",
+      "Your organizer account is pending administrator approval. Please wait for review before signing in.",
+    );
+  }
+
+  const tokens = await createTokenPair(user);
+  return {
+    ...tokens,
+    organizerStatus: user.organizerApproved ? "APPROVED" : "PENDING",
+  };
 }
 
 export async function login(input: {
@@ -197,7 +319,11 @@ export async function getProfile(userId: string) {
     },
   });
   if (!user) throw new AppError(404, "USER_NOT_FOUND", "User not found.");
-  return user;
+  const organizerCategory = user.role === "ORGANIZER" ? parseCategoryFromName(user.name) : undefined;
+  return {
+    ...user,
+    ...(organizerCategory ? { organizerCategory } : {}),
+  };
 }
 
 export async function updateProfile(

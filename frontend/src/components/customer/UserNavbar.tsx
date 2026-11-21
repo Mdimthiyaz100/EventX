@@ -1,6 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { MapPin, Search, ChevronDown, User, Heart, Ticket, LogOut, Menu, X } from "lucide-react";
+import {
+  MapPin,
+  Search,
+  ChevronDown,
+  User,
+  Heart,
+  Ticket,
+  LogOut,
+  Menu,
+  X,
+  Sparkles,
+  ShieldAlert,
+} from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { apiGet } from "../../services/api";
@@ -11,50 +23,69 @@ export default function UserNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [cities, setCities] = useState<string[]>([]);
-  const [selectedCity, setSelectedCity] = useState("All Cities");
+  const [cities, setCities] = useState<string[]>(["Chennai", "Mumbai", "Bengaluru", "Delhi NCR", "Hyderabad"]);
+  const [selectedCity, setSelectedCity] = useState("Chennai");
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let mounted = true;
     void apiGet("/cities").then((res) => {
       if (mounted && Array.isArray(res) && res.length > 0) {
         setCities(res as string[]);
-        setSelectedCity(res[0] as string);
+        if (!res.includes(selectedCity)) {
+          setSelectedCity(res[0] as string);
+        }
       }
     }).catch(() => undefined);
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [selectedCity]);
+
+  useEffect(() => {
+    if (searchOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    }
+  }, [searchOpen]);
 
   const navLinks = [
     { label: "Home", href: "/" },
     { label: "Events", href: "/events" },
-    { label: "Comedy Shows", href: "/category/Comedy Shows" },
     { label: "Movies", href: "/movies" },
-    { label: "Concerts", href: "/category/Concerts" },
-    { label: "Theatre", href: "/category/Theatre" },
-    { label: "Sports", href: "/category/Sports" },
-    { label: "Workshops", href: "/category/Workshops" },
+    { label: "Comedy Shows", href: "/comedy" },
+    { label: "Concerts", href: "/concerts" },
+    { label: "Sports", href: "/sports" },
+    { label: "Workshops", href: "/workshops" },
   ];
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/events?search=${encodeURIComponent(searchQuery.trim())}&city=${encodeURIComponent(selectedCity)}`);
+      setSearchOpen(false);
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#0D0B14]/95 backdrop-blur-xl text-white">
+    <header className="sticky top-0 z-50 w-full border-b border-[#292929] bg-[#000000]/95 backdrop-blur-xl text-white">
       <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 sm:px-8 lg:px-12">
-        {/* Brand Logo */}
+        {/* Brand Logo & Main Nav */}
         <div className="flex items-center gap-8">
           <Link
             to="/"
-            className="font-display text-2xl sm:text-3xl font-black uppercase tracking-tight text-white transition hover:opacity-90"
+            className="flex items-center gap-1 font-display text-2xl sm:text-3xl font-black uppercase tracking-tight text-white transition hover:opacity-90"
           >
-            Event<span className="text-[#E31824]">X</span>
+            EVENT<span className="text-[#ED1C24]">X</span>
           </Link>
 
-          {/* Desktop Navigation links */}
-          <nav className="hidden xl:flex items-center gap-6 text-[13px] font-semibold text-slate-300">
+          {/* Center Navigation Links matching reference screenshot */}
+          <nav className="hidden xl:flex items-center gap-6 text-[13px] font-semibold tracking-wide text-[#BDBDBD]">
             {navLinks.map((link) => {
               const active =
                 link.href === "/"
@@ -65,12 +96,12 @@ export default function UserNavbar() {
                   key={link.label}
                   to={link.href}
                   className={`relative py-1 transition hover:text-white ${
-                    active ? "text-white font-bold" : "text-slate-400"
+                    active ? "text-white font-bold" : "text-[#BDBDBD]"
                   }`}
                 >
                   {link.label}
                   {active && (
-                    <span className="absolute bottom-[-16px] left-0 h-[3px] w-full rounded-full bg-[#E31824]" />
+                    <span className="absolute bottom-[-24px] left-0 h-[3px] w-full rounded-full bg-[#ED1C24]" />
                   )}
                 </Link>
               );
@@ -78,208 +109,255 @@ export default function UserNavbar() {
           </nav>
         </div>
 
-        {/* Right side items */}
+        {/* Right side items: Location, Search, Wishlist, Get Tickets CTA, User */}
         <div className="flex items-center gap-3 sm:gap-4">
           {/* Location Selector */}
           <div className="relative">
             <button
               onClick={() => setCityDropdownOpen((prev) => !prev)}
-              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 transition hover:bg-white/10 hover:border-white/20"
+              className="flex items-center gap-1.5 rounded-full border border-[#292929] bg-[#111111] px-3.5 py-1.5 text-xs font-semibold text-[#FFFFFF] transition hover:border-[#ED1C24]/60"
             >
-              <MapPin size={13} className="text-[#E31824]" />
+              <MapPin size={13} className="text-[#ED1C24]" />
               <span>{selectedCity}</span>
-              <ChevronDown size={13} className="text-slate-400" />
+              <ChevronDown size={13} className="text-[#777777]" />
             </button>
 
             {cityDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-44 rounded-xl border border-white/10 bg-[#161224] p-1.5 shadow-2xl shadow-black backdrop-blur-2xl z-50">
-                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <div className="absolute right-0 mt-2 w-48 rounded-xl border border-[#292929] bg-[#111111] p-1.5 shadow-2xl shadow-black backdrop-blur-2xl z-50">
+                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#777777]">
                   Select Location
                 </div>
-                {cities.length === 0 ? (
-                  <div className="px-3 py-2 text-xs text-slate-400">No active locations</div>
-                ) : (
-                  cities.map((city) => (
-                    <button
-                      key={city}
-                      onClick={() => {
-                        setSelectedCity(city);
-                        setCityDropdownOpen(false);
-                      }}
-                      className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                        selectedCity === city
-                          ? "bg-[#E31824] text-white"
-                          : "text-slate-300 hover:bg-white/10"
-                      }`}
-                    >
-                      <span>{city}</span>
-                      {selectedCity === city && <span className="text-[10px]">✓</span>}
-                    </button>
-                  ))
-                )}
+                {cities.map((city) => (
+                  <button
+                    key={city}
+                    onClick={() => {
+                      setSelectedCity(city);
+                      setCityDropdownOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-xs font-medium transition ${
+                      selectedCity === city
+                        ? "bg-[#ED1C24] text-white"
+                        : "text-[#BDBDBD] hover:bg-[#171717] hover:text-white"
+                    }`}
+                  >
+                    <span>{city}</span>
+                    {selectedCity === city && <span className="size-1.5 rounded-full bg-white" />}
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Search Shortcut Icon */}
+          {/* Search Trigger */}
           <button
-            onClick={() => {
-              const searchInput = document.getElementById("main-search-input");
-              if (searchInput) {
-                searchInput.focus();
-                searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
-              } else {
-                navigate("/events");
-              }
-            }}
-            className="grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white"
-            title="Search events"
+            onClick={() => setSearchOpen(true)}
+            className="flex size-9 items-center justify-center rounded-full border border-[#292929] bg-[#111111] text-[#BDBDBD] transition hover:border-[#ED1C24]/60 hover:text-white"
+            title="Global Search"
           >
             <Search size={15} />
           </button>
 
-          {/* Wishlist Link */}
+          {/* Wishlist Shortcut */}
           <Link
             to="/wishlist"
-            className="relative grid size-9 place-items-center rounded-full border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10 hover:text-white"
-            title="Saved Items"
+            className="relative flex size-9 items-center justify-center rounded-full border border-[#292929] bg-[#111111] text-[#BDBDBD] transition hover:border-[#ED1C24]/60 hover:text-[#ED1C24]"
+            title="Favourites"
           >
-            <Heart size={15} className={wishlist.length ? "fill-[#E31824] text-[#E31824]" : ""} />
+            <Heart size={15} className={wishlist.length > 0 ? "fill-[#ED1C24] text-[#ED1C24]" : ""} />
             {wishlist.length > 0 && (
-              <span className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-[#E31824] text-[9px] font-bold text-white">
+              <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#ED1C24] text-[9px] font-bold text-white">
                 {wishlist.length}
               </span>
             )}
           </Link>
 
-          {/* CTA: Get Tickets */}
+          {/* "Get Tickets" Action Pill as in screenshot */}
           <Link
             to="/events"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#E31824] px-4 py-2 text-xs font-bold text-white shadow-md shadow-red-600/30 transition hover:bg-[#c8141f] active:scale-95"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-[#ED1C24] px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-[#ED1C24]/20 transition hover:bg-[#FF3038] hover:shadow-[#ED1C24]/40"
           >
-            <span>Get tickets</span>
-            <span className="text-sm leading-none">&rarr;</span>
+            <Ticket size={13} />
+            <span>Get Tickets</span>
           </Link>
 
-          {/* User Account Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setUserDropdownOpen((prev) => !prev)}
-              className="grid size-9 place-items-center rounded-full border border-white/10 bg-white/10 text-slate-200 transition hover:border-[#E31824] hover:bg-white/20"
-              title="Account"
-            >
-              {user?.name ? (
-                <span className="text-xs font-black uppercase text-red-400">
-                  {user.name.charAt(0)}
+          {/* Profile / Auth Menu */}
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setUserDropdownOpen((prev) => !prev)}
+                className="flex items-center gap-2 rounded-full border border-[#292929] bg-[#111111] p-1.5 pr-2.5 transition hover:border-[#ED1C24]/60"
+              >
+                <div className="flex size-7 items-center justify-center rounded-full bg-[#ED1C24] text-xs font-bold text-white">
+                  {user.name ? user.name.charAt(0).toUpperCase() : "U"}
+                </div>
+                <span className="hidden max-w-[100px] truncate text-xs font-semibold text-white md:inline">
+                  {user.name.split(" ")[0]}
                 </span>
-              ) : (
-                <User size={16} />
-              )}
-            </button>
+                <ChevronDown size={13} className="text-[#777777]" />
+              </button>
 
-            {userDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-52 rounded-xl border border-white/10 bg-[#161224] p-1.5 shadow-2xl shadow-black z-50">
-                {user ? (
-                  <>
-                    <div className="border-b border-white/10 px-3 py-2.5">
-                      <p className="text-xs font-bold text-white truncate">{user.name}</p>
-                      <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
-                      <span className="mt-1 inline-block rounded-md bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-400">
-                        {user.role}
-                      </span>
-                    </div>
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-xl border border-[#292929] bg-[#111111] p-1.5 shadow-2xl shadow-black backdrop-blur-2xl z-50">
+                  <div className="border-b border-[#292929] px-3 py-2.5">
+                    <p className="text-xs font-bold text-white">{user.name}</p>
+                    <p className="truncate text-[11px] text-[#777777]">{user.email}</p>
+                    <span className="mt-1 inline-block rounded bg-[#ED1C24]/20 px-2 py-0.5 text-[10px] font-bold uppercase text-[#ED1C24]">
+                      {user.role}
+                    </span>
+                  </div>
 
+                  <div className="py-1">
                     <Link
                       to="/my-bookings"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-slate-200 transition hover:bg-white/10"
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-[#BDBDBD] transition hover:bg-[#171717] hover:text-white"
                     >
-                      <Ticket size={14} className="text-[#E31824]" />
-                      <span>My Bookings</span>
+                      <Ticket size={14} className="text-[#ED1C24]" />
+                      My Bookings
+                    </Link>
+                    <Link
+                      to="/profile"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-[#BDBDBD] transition hover:bg-[#171717] hover:text-white"
+                    >
+                      <User size={14} className="text-[#ED1C24]" />
+                      Profile & Settings
+                    </Link>
+                    <Link
+                      to="/rewards"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-[#BDBDBD] transition hover:bg-[#171717] hover:text-white"
+                    >
+                      <Sparkles size={14} className="text-[#ED1C24]" />
+                      Rewards & EventX Pass
                     </Link>
 
                     {user.role === "ADMIN" && (
                       <Link
                         to="/admin/dashboard"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/10"
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-[#ED1C24] transition hover:bg-[#171717]"
                       >
-                        <span>⚙ Admin Portal</span>
+                        <ShieldAlert size={14} />
+                        Admin Portal
                       </Link>
                     )}
+                    {user.role === "ORGANIZER" && (
+                      <Link
+                        to="/organizer/dashboard"
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-[#ED1C24] transition hover:bg-[#171717]"
+                      >
+                        <ShieldAlert size={14} />
+                        Organizer Portal
+                      </Link>
+                    )}
+                  </div>
 
+                  <div className="border-t border-[#292929] pt-1">
                     <button
-                      onClick={async () => {
+                      onClick={() => {
                         setUserDropdownOpen(false);
-                        await logout();
-                        navigate("/");
+                        logout();
                       }}
-                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold text-red-400 transition hover:bg-red-500/10"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-[#EF4444] transition hover:bg-[#171717]"
                     >
                       <LogOut size={14} />
-                      <span>Sign Out</span>
+                      Log Out
                     </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="px-3 py-2 text-[11px] text-slate-400">
-                      Sign in to book tickets and manage your profile.
-                    </div>
-                    <Link
-                      to="/choose-portal"
-                      onClick={() => setUserDropdownOpen(false)}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#E31824] px-3 py-2 text-xs font-bold text-white shadow-md transition hover:bg-[#c8141f]"
-                    >
-                      <span>Sign In</span>
-                    </Link>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className="rounded-full border border-[#292929] bg-[#111111] px-4 py-1.5 text-xs font-semibold text-white transition hover:border-[#ED1C24]/60"
+              >
+                Sign In
+              </Link>
+            </div>
+          )}
 
-          {/* Mobile hamburger toggle */}
+          {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/5 xl:hidden text-slate-300 hover:text-white"
+            className="flex size-9 items-center justify-center rounded-full border border-[#292929] bg-[#111111] text-white xl:hidden"
           >
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile drawer */}
+      {/* Global Search Overlay */}
+      {searchOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 px-4 pt-20 backdrop-blur-md">
+          <div className="relative w-full max-w-2xl rounded-2xl border border-[#292929] bg-[#111111] p-6 shadow-2xl">
+            <button
+              onClick={() => setSearchOpen(false)}
+              className="absolute right-4 top-4 text-[#777777] transition hover:text-white"
+            >
+              <X size={20} />
+            </button>
+
+            <form onSubmit={handleSearchSubmit} className="mt-2">
+              <div className="relative flex items-center">
+                <Search size={20} className="absolute left-4 text-[#ED1C24]" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search events, movies, concerts, comedy, dining..."
+                  className="w-full rounded-xl border border-[#292929] bg-[#0A0A0A] py-3.5 pl-12 pr-4 text-sm text-white placeholder-[#777777] focus:border-[#ED1C24] focus:outline-none"
+                />
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#BDBDBD]">
+                <span className="text-[#777777]">Popular:</span>
+                {["Anirudh Live", "Jailer 2", "Stand-up Comedy", "Food Fest", "Turf Booking"].map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery(term);
+                      navigate(`/events?search=${encodeURIComponent(term)}&city=${encodeURIComponent(selectedCity)}`);
+                      setSearchOpen(false);
+                    }}
+                    className="rounded-full border border-[#292929] bg-[#171717] px-2.5 py-1 text-[11px] hover:border-[#ED1C24] hover:text-white"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="border-t border-white/10 bg-[#100C1B] px-5 py-4 xl:hidden">
-          <div className="flex flex-col gap-1">
+        <div className="border-b border-[#292929] bg-[#0A0A0A] px-4 py-6 xl:hidden">
+          <nav className="flex flex-col gap-3">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 to={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-200 hover:bg-white/10"
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-[#BDBDBD] hover:bg-[#171717] hover:text-white"
               >
                 {link.label}
               </Link>
             ))}
-            <div className="mt-3 border-t border-white/10 pt-3 flex flex-col gap-2">
-              <Link
-                to="/my-bookings"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
-              >
-                <Ticket size={16} className="text-[#E31824]" />
-                <span>My Bookings</span>
-              </Link>
-              <Link
-                to="/choose-portal"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center rounded-lg bg-[#E31824] px-3 py-2.5 text-xs font-bold uppercase tracking-wider text-white"
-              >
-                Sign In to EventX
-              </Link>
-            </div>
-          </div>
+            <Link
+              to="/rewards"
+              onClick={() => setMobileMenuOpen(false)}
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-[#ED1C24] hover:bg-[#171717]"
+            >
+              EventX Pass & Rewards
+            </Link>
+          </nav>
         </div>
       )}
     </header>

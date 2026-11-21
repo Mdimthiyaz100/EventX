@@ -50,5 +50,19 @@ router.patch(
   validateBody(organizerSchema),
   asyncHandler(userController.approveOrganizer),
 );
+router.patch(
+  "/organizers/:id/approve",
+  asyncHandler(async (req, res) => {
+    req.body.approved = true;
+    await userController.approveOrganizer(req, res, () => {});
+  }),
+);
+router.patch(
+  "/organizers/:id/reject",
+  asyncHandler(async (req, res) => {
+    req.body.approved = false;
+    await userController.approveOrganizer(req, res, () => {});
+  }),
+);
 
 export default router;
